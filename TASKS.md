@@ -225,7 +225,10 @@
 - [x] Dashboard layout endpoints respond correctly
 - [x] Portfolio and Calendar handlers return data for all size buckets
 - [x] Auth endpoints still work after module additions
-**Notes:** Major regression fixes completed. Remaining 7 failures are test assertion mismatches, not functional bugs. Core backend is stable.
+- [x] **Alembic migration chain is consistent (fixed GitHub CI failure)**
+  - Fixed revision ID inconsistency in 005_add_calendar_tables.py
+  - Added Calendar models to alembic/env.py imports
+**Notes:** Major regression fixes completed. Remaining 7 failures are test assertion mismatches, not functional bugs. Core backend is stable. Alembic migrations verified.
 **Gate:** CLEARED for DEV-008.
 
 ### DEV-008: Data ingestion endpoints
