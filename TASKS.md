@@ -138,20 +138,23 @@
 **Gate:** CLEARED for DEV-006.
 
 ### DEV-006: Portfolio Module handler
-**Status:** []
+**Status:** [DONE]
 **Priority:** P1
 **Assigned:** Developer
 **Source:** ARCHITECTURE.md Section 7.1
 **Deliverable:** Full Portfolio module backend
 **Acceptance Criteria:**
-- [ ] PortfolioHandler implements get_data() for compact/standard/expanded sizes
-- [ ] GET `/modules/{id}/data` works for portfolio type
-- [ ] Supports asset types: equity, cash, bond, real_estate, insurance
-- [ ] Position CRUD operations
-- [ ] Daily snapshot recording
-- [ ] FX rate table and manual entry
-- [ ] SGD base currency with selectable display currency
-- [ ] Yahoo Finance integration for equity prices (with circuit breaker)
+- [x] PortfolioHandler implements get_data() for compact/standard/expanded sizes
+- [x] GET `/modules/{id}/data` works for portfolio type
+- [x] Supports asset types: equity, cash, bond, real_estate, insurance
+- [x] Position CRUD operations
+- [x] Daily snapshot recording
+- [x] FX rate table and manual entry
+- [x] SGD base currency with selectable display currency
+- [x] Yahoo Finance integration for equity prices (with circuit breaker)
+- [x] Migration 004 created
+- [x] All tests passing (15/15)
+**Gate:** CLEARED for DEV-007.
 
 ### DEV-007: Calendar Module handler
 **Status:** []
