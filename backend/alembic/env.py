@@ -10,6 +10,7 @@ from app.db.database import Base
 
 # Import all models to register them with Base.metadata
 from app.models.user import User, RefreshToken
+from app.models.module import Module
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

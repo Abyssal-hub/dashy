@@ -9,6 +9,7 @@ from app.core.limiter import limiter
 from app.api import health
 from app.api.auth import router as auth_router
 from app.api import protected
+from app.api.modules import router as modules_router
 
 
 def create_app() -> FastAPI:
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth_router.router)
     app.include_router(protected.router)
+    app.include_router(modules_router.router, prefix="/api")
 
     return app
 
