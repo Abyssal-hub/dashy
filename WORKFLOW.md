@@ -309,7 +309,40 @@ Before the Architect assigns the next DEV task, the following gate must pass:
 
 **Exception:** Purely documentation or architecture tasks (ARCH-XXX) may skip the regression gate at Architect discretion.
 
-### 8.1 Included
+### 7.4 Commit and Push Per Milestone
+**Rule:** Every completed milestone must be committed and pushed to the repository.
+
+**Workflow:**
+```
+Developer completes milestone
+         ↓
+Commit with descriptive message: "DEV-XXX: [what was done]"
+         ↓
+Push to GitHub
+         ↓
+GitHub Actions automatically runs regression (QA-REG)
+         ↓
+[If green] → Architect marks milestone DONE, proceeds to next
+[If red] → Developer fixes, commits, pushes again
+```
+
+**Commit Message Format:**
+```
+DEV-XXX: Brief description of what was implemented
+
+- Specific change 1
+- Specific change 2
+- Any known limitations or next steps
+```
+
+**Purpose:** 
+- Ensure every milestone is preserved in version control
+- Enable QA to run regression tests on each completed unit of work
+- Maintain clean history for review and rollback
+
+---
+
+## 8. Phase 1 Scope
 - Backend foundation (FastAPI, auth, database)
 - Redis queue and consumer
 - Portfolio Module (full)
