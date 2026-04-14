@@ -154,6 +154,21 @@
 - [x] Yahoo Finance integration for equity prices (with circuit breaker)
 - [x] Migration 004 created
 - [x] All tests passing (15/15)
+**Gate:** CLEARED for FE-MVP-001.
+
+### FE-MVP-001: Frontend MVP (vanilla HTML/JS)
+**Status:** [DONE]
+**Priority:** P0
+**Assigned:** Developer
+**Source:** MVP requirement - main page first
+**Deliverable:** Working frontend with login and dashboard
+**Acceptance Criteria:**
+- [x] Login page with JWT authentication
+- [x] Dashboard with grid layout
+- [x] Add/delete modules UI
+- [x] Module type icons and previews
+- [x] Static file serving from FastAPI
+- [x] Tailwind CSS styling
 **Gate:** CLEARED for DEV-007.
 
 ### DEV-007: Calendar Module handler
