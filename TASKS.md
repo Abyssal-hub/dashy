@@ -103,7 +103,7 @@
 **Gate:** PASSED. Cleared for DEV-004. Run `./scripts/run-qa-reg-001.sh` for full validation.
 
 ### DEV-004: Module system foundation
-**Status:** [IN_PROGRESS]
+**Status:** [DONE]
 **Priority:** P1 (blocking)
 **Assigned:** Developer (via GitHub Actions)
 **Source:** ARCHITECTURE.md Section 5.2, 7
@@ -115,10 +115,11 @@
 - [x] Module model (`app/models/module.py`)
 - [x] Pydantic schemas (`app/schemas/module.py`)
 - [x] CRUD router (`app/api/modules/router.py`)
-- [ ] Register router in main.py
-- [ ] Create Alembic migration for Module table
-- [ ] Run full test suite
-**Notes:** Files created. Pending: migration, integration, and testing via GitHub Actions.
+- [x] Register router in main.py
+- [x] Create Alembic migration for Module table
+- [x] Run full test suite (15/15 passing)
+**Notes:** All acceptance criteria met. CI passing on GitHub Actions.
+**Gate:** CLEARED for DEV-005.
 
 ### DEV-005: Dashboard layout endpoints
 **Status:** []
