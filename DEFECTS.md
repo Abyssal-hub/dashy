@@ -6,44 +6,30 @@
 
 ## DEF-001: Module creation API returns 400 error
 
-**Status:** OPEN  
+**Status:** FIXED  
 **Severity:** Major  
 **Discovered:** 2024-01-15 during DEV-007 QA  
+**Fixed:** 2024-01-15  
 **Related To:** DEV-004, DEV-007
 
 ### Summary
-POST `/api/modules` returns HTTP 400 instead of 201 when creating modules. This blocks integration testing of module-dependent features (Calendar, Portfolio events).
+POST `/api/modules` returned HTTP 400 instead of 201 when creating modules. This blocked integration testing of module-dependent features (Calendar, Portfolio events).
 
-### Reproduction Steps
-1. Authenticate and get JWT token
-2. POST `/api/modules` with valid payload:
-   ```json
-   {
-     "module_type": "calendar",
-     "name": "Test Calendar",
-     "config": {},
-     "size": "medium"
-   }
-   ```
-3. Observe 400 response
+### Root Cause
+1. Module handlers were never imported, so they weren't registered in the handler registry
+2. Modules router expected `current_user: User` object but `get_current_user` returned `user_id: str`
+3. Pydantic response schemas expected UUID objects but SQLAlchemy returned UUIDs that weren't being serialized
 
-### Expected
-- HTTP 201 Created
-- Response body with created module including `id` field
+### Resolution
+- Added handler imports in `app/modules/__init__.py` to trigger registration
+- Fixed modules router to use `user_id: str` throughout
+- Fixed calendar API to use `user_id: str`
+- Changed `ModuleResponse.id` and `user_id` from `UUID` to `str`
+- Added `field_validator` to `DashboardLayoutResponse` for UUID→str conversion
 
-### Actual
-- HTTP 400 Bad Request
-- No module created
-
-### Impact
-- Blocks QA testing of Calendar event CRUD
-- Blocks QA testing of Portfolio asset CRUD
-- Core feature (module creation) non-functional
-
-### Notes
-- May be related to config validation in ModuleCreate schema
-- Check if `config` field validation is too strict
-- Handler registration and module type enum may be mismatching
+### Tests
+- Calendar tests: 10/10 passing
+- MVP flow tests: 4/15 passing (remaining failures are separate issues)
 
 ---
 

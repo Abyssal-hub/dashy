@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class ModuleBase(BaseModel):
@@ -52,6 +52,14 @@ class ModuleResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    
+    @field_validator('id', 'user_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convert UUID to string."""
+        if isinstance(v, UUID):
+            return str(v)
+        return v
 
 
 class ModuleListResponse(BaseModel):
@@ -62,7 +70,15 @@ class ModuleListResponse(BaseModel):
 
 class ModuleDataResponse(BaseModel):
     """Schema for module data response."""
-    module_id: UUID
+    module_id: str
     module_type: str
     size: str
     data: dict[str, Any]
+    
+    @field_validator('module_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convert UUID to string."""
+        if isinstance(v, UUID):
+            return str(v)
+        return v

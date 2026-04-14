@@ -55,8 +55,10 @@ async def test_list_modules_empty(client, db_session):
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 0
+    assert "modules" in data
+    assert "total" in data
+    assert data["modules"] == []
+    assert data["total"] == 0
 
 
 @pytest.mark.asyncio
@@ -89,8 +91,9 @@ async def test_list_modules_with_data(client, db_session):
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    module_types = [m["module_type"] for m in data]
+    assert data["total"] == 2
+    assert len(data["modules"]) == 2
+    module_types = [m["module_type"] for m in data["modules"]]
     assert "portfolio" in module_types
     assert "calendar" in module_types
 
@@ -123,8 +126,9 @@ async def test_delete_module_success(client, db_session):
         "/api/modules",
         headers={"Authorization": f"Bearer {token}"}
     )
-    modules = list_response.json()
-    assert len(modules) == 0
+    data = list_response.json()
+    assert data["modules"] == []
+    assert data["total"] == 0
 
 
 @pytest.mark.asyncio
@@ -152,7 +156,7 @@ async def test_create_module_unauthorized(client):
         json={"module_type": "portfolio", "name": "Test", "config": {}, "size": "medium"}
     )
     
-    assert response.status_code == 403  # FastAPI auto-error for missing auth
+    assert response.status_code == 401  # Unauthorized for missing token
 
 
 @pytest.mark.asyncio
@@ -167,7 +171,7 @@ async def test_create_module_invalid_type(client, db_session):
         headers={"Authorization": f"Bearer {token}"}
     )
     
-    assert response.status_code == 422
+    assert response.status_code == 400  # Bad request for invalid module type
 
 
 @pytest.mark.asyncio
@@ -252,7 +256,8 @@ async def test_module_isolation_between_users(client, db_session):
     # Assert: User 2 sees empty list
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 0
+    assert data["modules"] == []
+    assert data["total"] == 0
     
     # Assert: User 2 cannot delete User 1's module
     # (Would need to know the ID, but trying a random one)

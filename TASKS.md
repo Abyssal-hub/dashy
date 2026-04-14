@@ -203,8 +203,8 @@
 - [x] Keyword filtering for scraped events (include/exclude filters)
 - [x] Database models: CalendarEvent, CalendarKeywordFilter
 - [x] Migration 005_add_calendar_tables created
-- [x] Handler tests passing (2/2)
-**Notes:** API endpoint tests blocked by pre-existing module creation bug (returns 400). Handler implementation verified correct via direct tests.
+- [x] Handler tests: 10/10 passing
+**Notes:** Fixed DEF-001 (module creation 400 error) during development. Calendar module now fully functional.
 **Gate:** CLEARED for QA-REG-002.
 
 ### QA-REG-002: Regression check - Core backend modules
