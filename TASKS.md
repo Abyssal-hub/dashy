@@ -169,6 +169,22 @@
 - [x] Module type icons and previews
 - [x] Static file serving from FastAPI
 - [x] Tailwind CSS styling
+**Gate:** CLEARED for DEPLOY-001.
+
+### DEPLOY-001: Local deployment configuration
+**Status:** [DONE]
+**Priority:** P0
+**Assigned:** Developer
+**Source:** User requirement - easy local testing
+**Deliverable:** One-command local deployment
+**Acceptance Criteria:**
+- [x] docker-compose.yml with all services
+- [x] Automatic database migrations on startup
+- [x] start.sh - One-command deployment script
+- [x] stop.sh - Easy shutdown
+- [x] logs.sh - View logs
+- [x] .env.example for configuration
+- [x] DEPLOY.md with complete guide
 **Gate:** CLEARED for DEV-007.
 
 ### DEV-007: Calendar Module handler
