@@ -122,17 +122,20 @@
 **Gate:** CLEARED for DEV-005.
 
 ### DEV-005: Dashboard layout endpoints
-**Status:** []
+**Status:** [DONE]
 **Priority:** P2
 **Assigned:** Developer
 **Source:** ARCHITECTURE.md Section 5.1, 4.2
 **Deliverable:** Layout persistence API
 **Acceptance Criteria:**
-- [ ] GET `/dashboard/layout` returns user's grid layout
-- [ ] PUT `/dashboard/layout` saves layout
-- [ ] POST `/dashboard/modules/{id}` adds module to dashboard
-- [ ] DELETE `/dashboard/modules/{id}` removes from dashboard
-- [ ] Layout validated (no overlapping positions)
+- [x] GET `/dashboard/layout` returns user's grid layout
+- [x] PUT `/dashboard/layout` saves layout
+- [x] POST `/dashboard/modules/{id}` adds module to dashboard
+- [x] DELETE `/dashboard/modules/{id}` removes from dashboard
+- [x] Layout validated (no overlapping positions)
+- [x] Migration 003 created
+- [x] All tests passing (15/15)
+**Gate:** CLEARED for DEV-006.
 
 ### DEV-006: Portfolio Module handler
 **Status:** []
