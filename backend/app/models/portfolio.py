@@ -1,82 +1,131 @@
 import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Float, Numeric
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, String, Numeric, DateTime, Enum
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models import Base
+from app.db.database import Base
 
-
-class CalendarEvent(Base):
-    __tablename__ = "calendar_events"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    title = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    end_time = Column(DateTime(timezone=True), nullable=True)
-    timezone = Column(String(50), default="UTC", nullable=False)
-    source = Column(String(50), default="manual", nullable=False)  # manual | scraped | imported
-    external_id = Column(String(255), nullable=True, index=True)
-    scraped_keywords = Column(JSONB, default=list, nullable=False)
-
-    user = relationship("User", back_populates="calendar_events")
+if TYPE_CHECKING:
+    from app.models.module import Module
 
 
-class AssetType(Base):
-    __tablename__ = "asset_types"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    type_name = Column(String(50), unique=True, nullable=False)
-
-    portfolio_positions = relationship("PortfolioPosition", back_populates="asset_type")
-
-
-class PortfolioPosition(Base):
-    __tablename__ = "portfolio_positions"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    module_id = Column(UUID(as_uuid=True), ForeignKey("modules.id", ondelete="CASCADE"), nullable=False, index=True)
-    asset_type_id = Column(UUID(as_uuid=True), ForeignKey("asset_types.id", ondelete="RESTRICT"), nullable=False, index=True)
-    symbol = Column(String(50), nullable=True)
-    name = Column(String(255), nullable=False)
-    quantity = Column(Numeric(24, 8), nullable=False, default=0)
-    avg_cost_basis = Column(Numeric(24, 8), nullable=True)
-    current_price = Column(Numeric(24, 8), nullable=True)
-    current_value = Column(Numeric(24, 8), nullable=True)
-    currency = Column(String(3), default="SGD", nullable=False)
-    tags = Column(JSONB, default=list, nullable=False)
-    last_updated = Column(DateTime(timezone=True), nullable=True)
-
-    module = relationship("Module", back_populates="portfolio_positions")
-    asset_type = relationship("AssetType", back_populates="portfolio_positions")
-
-
-class PortfolioSnapshot(Base):
-    __tablename__ = "portfolio_snapshots"
-    __table_args__ = (
-        # Each module can have only one snapshot per day
-        {"postgresql_include": ["module_id", "snapshot_date"]},
+class Asset(Base):
+    """Asset in a portfolio module."""
+    
+    __tablename__ = "portfolio_assets"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    module_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("modules.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
+    
+    # Asset details
+    symbol: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    asset_type: Mapped[str] = mapped_column(String(20), nullable=False, default="stock")
+    # stock, crypto, etf, bond, forex, commodity
+    
+    # Position
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False, default=0)
+    avg_buy_price: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False, default=0)
+    
+    # Current price (updated by background job)
+    current_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
+    price_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    
+    # Metadata
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+    
+    # Relationships
+    module = relationship("Module", back_populates="assets")
+    transactions = relationship("Transaction", back_populates="asset", cascade="all, delete-orphan")
+    
+    @property
+    def market_value(self) -> Decimal:
+        """Calculate current market value."""
+        if self.current_price:
+            return self.quantity * self.current_price
+        return Decimal("0")
+    
+    @property
+    def cost_basis(self) -> Decimal:
+        """Calculate total cost basis."""
+        return self.quantity * self.avg_buy_price
+    
+    @property
+    def unrealized_pnl(self) -> Decimal:
+        """Calculate unrealized profit/loss."""
+        return self.market_value - self.cost_basis
+    
+    @property
+    def unrealized_pnl_percent(self) -> float:
+        """Calculate unrealized P&L percentage."""
+        if self.cost_basis and self.cost_basis > 0:
+            return float((self.unrealized_pnl / self.cost_basis) * 100)
+        return 0.0
+    
+    def __repr__(self) -> str:
+        return f"<Asset(symbol={self.symbol}, qty={self.quantity})>"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    module_id = Column(UUID(as_uuid=True), ForeignKey("modules.id", ondelete="CASCADE"), nullable=False, index=True)
-    snapshot_date = Column(DateTime(timezone=True), nullable=False)
-    total_value = Column(Numeric(24, 8), nullable=False)
-    display_currency = Column(String(3), default="SGD", nullable=False)
 
-    module = relationship("Module", back_populates="portfolio_snapshots")
-
-
-class FXRate(Base):
-    __tablename__ = "fx_rates"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    from_currency = Column(String(3), nullable=False)
-    to_currency = Column(String(3), nullable=False)
-    rate = Column(Numeric(24, 8), nullable=False)
-    effective_date = Column(DateTime(timezone=True), nullable=False)
-
-    user = relationship("User", back_populates="fx_rates")
+class Transaction(Base):
+    """Transaction record for an asset."""
+    
+    __tablename__ = "portfolio_transactions"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    asset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("portfolio_assets.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    
+    # Transaction details
+    transaction_type: Mapped[str] = mapped_column(String(10), nullable=False)
+    # buy, sell, dividend, split
+    
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    fees: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False, default=0)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    
+    # Timestamp
+    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    
+    # Metadata
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow
+    )
+    
+    # Relationships
+    asset = relationship("Asset", back_populates="transactions")
+    
+    @property
+    def total_value(self) -> Decimal:
+        """Total value of transaction (including fees)."""
+        return (self.quantity * self.price) + self.fees
+    
+    def __repr__(self) -> str:
+        return f"<Transaction(type={self.transaction_type}, symbol={self.asset.symbol if self.asset else None})>"

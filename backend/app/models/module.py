@@ -1,8 +1,10 @@
 import uuid
 from datetime import datetime
+import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Integer, Float, Boolean, DateTime, JSON
+from sqlalchemy import ForeignKey, String, Integer, Boolean, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,6 +12,7 @@ from app.db.database import Base
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.portfolio import Asset
 
 
 class Module(Base):
@@ -55,8 +58,9 @@ class Module(Base):
         onupdate=datetime.utcnow
     )
     
-    # Relationships - use string reference to avoid circular import issues
+    # Relationships
     user = relationship("User", back_populates="modules")
+    assets = relationship("Asset", back_populates="module", cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
         return f"<Module(id={self.id}, type={self.module_type}, name={self.name})>"

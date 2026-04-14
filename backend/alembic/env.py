@@ -12,6 +12,7 @@ from app.db.database import Base
 from app.models.user import User, RefreshToken
 from app.models.module import Module
 from app.models.dashboard import DashboardLayout
+from app.models.portfolio import Asset, Transaction
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

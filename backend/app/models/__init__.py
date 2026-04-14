@@ -2,5 +2,6 @@ from app.db.database import Base
 from app.models.user import User, RefreshToken
 from app.models.module import Module
 from app.models.dashboard import DashboardLayout
+from app.models.portfolio import Asset, Transaction
 
-__all__ = ["Base", "User", "RefreshToken", "Module", "DashboardLayout"]
+__all__ = ["Base", "User", "RefreshToken", "Module", "DashboardLayout", "Asset", "Transaction"]
