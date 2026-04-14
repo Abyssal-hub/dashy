@@ -13,6 +13,7 @@ from app.db.database import Base
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.portfolio import Asset
+    from app.models.calendar import CalendarEvent
 
 
 class Module(Base):
@@ -61,6 +62,7 @@ class Module(Base):
     # Relationships
     user = relationship("User", back_populates="modules")
     assets = relationship("Asset", back_populates="module", cascade="all, delete-orphan")
+    calendar_events = relationship("CalendarEvent", back_populates="module", cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
         return f"<Module(id={self.id}, type={self.module_type}, name={self.name})>"

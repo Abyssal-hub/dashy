@@ -1,11 +1,9 @@
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "e2e"]
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
-markers = [
-    "integration: marks tests as integration tests requiring Docker",
-    "auth: marks tests related to authentication",
-    "slow: marks tests as slow running",
-]
 addopts = "-v --tb=short"
+
+[tool.pyright]
+include = ["app", "tests"]
+exclude = [".venv", "__pycache__"]

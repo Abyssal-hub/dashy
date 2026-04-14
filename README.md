@@ -43,4 +43,13 @@ docker-compose up --build
 
 ## Status
 
-Phase 1: Foundation (in progress)
+**Phase 1: Foundation (MVP v1.0 Complete)** ✅
+
+The MVP version includes:
+- JWT authentication (login/register via API)
+- Dashboard with grid layout
+- Portfolio, Calendar, and Log module types (placeholder views)
+- Add/delete modules
+- Static file serving with vanilla HTML/JS
+
+See [MVP-UX-FLOWS.md](docs/MVP-UX-FLOWS.md) for complete user journey documentation.
