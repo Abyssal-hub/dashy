@@ -39,7 +39,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth_router.router)
     app.include_router(protected.router)
-    app.include_router(modules_router.router, prefix="/api")
+    app.include_router(modules_router, prefix="/api")
 
     return app
 
