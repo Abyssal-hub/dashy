@@ -55,8 +55,8 @@ class Module(Base):
         onupdate=datetime.utcnow
     )
     
-    # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="modules")
+    # Relationships - use string reference to avoid circular import issues
+    user = relationship("User", back_populates="modules")
     
     def __repr__(self) -> str:
         return f"<Module(id={self.id}, type={self.module_type}, name={self.name})>"

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -21,8 +21,8 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
-    # Relationships
-    modules: List["Module"] = relationship("Module", back_populates="user", cascade="all, delete-orphan")
+    # Relationships - using old-style for compatibility
+    modules = relationship("Module", back_populates="user", cascade="all, delete-orphan")
 
 
 class RefreshToken(Base):
