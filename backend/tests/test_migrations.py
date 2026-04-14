@@ -1,7 +1,6 @@
 import pytest
-import subprocess
-import sys
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.db.database import Base
 
@@ -20,7 +19,7 @@ async def test_alembic_migration_with_testcontainers(postgres_container):
     
     # Verify tables exist by checking with a raw query
     async with engine.connect() as conn:
-        result = await conn.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'")
+        result = await conn.execute(text("SELECT tablename FROM pg_tables WHERE schemaname='public'"))
         tables = [row[0] for row in result.fetchall()]
     
     await engine.dispose()
@@ -33,8 +32,6 @@ async def test_alembic_migration_with_testcontainers(postgres_container):
 @pytest.mark.skip(reason="Requires alembic env.py to accept dynamic database URL - defer to CI")
 def test_alembic_upgrade_head():
     """Test alembic upgrade head - skipped until CI setup with proper env vars."""
-    # This test would require modifying alembic/env.py to accept env var override
-    # or running in a CI environment with the correct database configured
     pass
 
 
