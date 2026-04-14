@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -12,6 +15,10 @@ from app.api import protected
 from app.api.modules import router as modules_router
 from app.api import dashboard as dashboard_router
 from app.api import portfolio as portfolio_router
+
+
+# Path to frontend static files
+FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
 
 
 def create_app() -> FastAPI:
@@ -37,13 +44,29 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Register routers
+    # Register API routers
     app.include_router(health.router)
     app.include_router(auth_router.router)
     app.include_router(protected.router)
     app.include_router(modules_router, prefix="/api")
     app.include_router(dashboard_router.router, prefix="/api")
     app.include_router(portfolio_router.router, prefix="/api")
+
+    # Serve static files from frontend directory
+    if FRONTEND_DIR.exists():
+        app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+        
+        # Serve index.html at root
+        @app.get("/")
+        async def serve_index():
+            from fastapi.responses import FileResponse
+            return FileResponse(FRONTEND_DIR / "index.html")
+        
+        # Serve dashboard.html at /dashboard
+        @app.get("/dashboard")
+        async def serve_dashboard():
+            from fastapi.responses import FileResponse
+            return FileResponse(FRONTEND_DIR / "dashboard.html")
 
     return app
 
