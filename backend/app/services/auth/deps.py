@@ -25,7 +25,7 @@ async def get_current_user(
     
     if not token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )

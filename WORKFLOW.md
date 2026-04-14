@@ -92,6 +92,8 @@ Move to IN_REVIEW, notify Architect
 
 **Rule:** If QA tests fail, QA does NOT sign off. Production cycle repeats and goes back to Developer.
 
+**CRITICAL: QA only signs off when 100% of tests pass. No partial sign-offs allowed.**
+
 ```
 Developer marks DEV task IN_REVIEW
          ↓

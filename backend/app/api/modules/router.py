@@ -30,7 +30,7 @@ async def create_module(
     handler_class = get_handler(module_data.module_type)
     if not handler_class:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Invalid module type: {module_data.module_type}",
         )
     

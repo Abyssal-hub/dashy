@@ -37,5 +37,8 @@ class Settings(BaseSettings):
     resend_api_key: Optional[str] = None
     alert_from_email: Optional[str] = None
 
+    # Rate Limiting
+    rate_limit_enabled: bool = True
+
 
 settings = Settings()

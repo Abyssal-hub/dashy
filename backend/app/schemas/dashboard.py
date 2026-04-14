@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 class ModulePosition(BaseModel):
     """Position and size of a module on the dashboard."""
-    module_id: str
+    module_id: str | None = None  # Optional - can be provided via URL path
     x: int = Field(ge=0, description="Column position (0-indexed)")
     y: int = Field(ge=0, description="Row position (0-indexed)")
     w: int = Field(ge=1, le=12, description="Width in columns (1-12)")

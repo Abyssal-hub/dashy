@@ -208,28 +208,22 @@
 **Gate:** CLEARED for QA-REG-002.
 
 ### QA-REG-002: Regression check - Core backend modules
-**Status:** [DONE]
+**Status:** [FAILED] → BLOCKED on DEF-002
 **Priority:** P1
-**Assigned:** QA (completed)
+**Assigned:** QA
 **Depends:** DEV-004, DEV-005, DEV-006, DEV-007
 **Deliverable:** CI confirms backend modules are stable
 **Acceptance Criteria:**
-- [x] Full pytest suite passes (unit + integration)
-  - 52 passed, 7 failed, 2 skipped
-  - Core auth: 7/7 passing
-  - Core modules: 10/10 passing
-  - Calendar: 10/10 passing
-  - Dashboard: 3/4 passing
-  - MVP flows: 4/15 passing (13 improved from 2)
-- [x] Module CRUD endpoints respond correctly
-- [x] Dashboard layout endpoints respond correctly
-- [x] Portfolio and Calendar handlers return data for all size buckets
-- [x] Auth endpoints still work after module additions
-- [x] **Alembic migration chain is consistent (fixed GitHub CI failure)**
-  - Fixed revision ID inconsistency in 005_add_calendar_tables.py
-  - Added Calendar models to alembic/env.py imports
-**Notes:** Major regression fixes completed. Remaining 7 failures are test assertion mismatches, not functional bugs. Core backend is stable. Alembic migrations verified.
-**Gate:** CLEARED for DEV-008.
+- [ ] **ALL tests must pass (100% - no exceptions)**
+  - Current: 55 passed, 4 failed, 2 skipped ❌
+  - Blocked by DEF-002: Test inconsistency (conflicting status code expectations)
+- [ ] Module CRUD endpoints respond correctly
+- [ ] Dashboard layout endpoints respond correctly  
+- [ ] Portfolio and Calendar handlers return data for all size buckets
+- [ ] Auth endpoints still work after module additions
+- [ ] Alembic migration chain is consistent
+**Notes:** QA REJECTS sign-off. Cannot achieve 100% pass rate due to conflicting test expectations between test_mvp_flows.py and test_modules.py. Filed DEF-002 for Architect resolution.
+**Gate:** BLOCKED - Awaiting DEF-002 resolution before QA can sign off.
 
 ### DEV-008: Data ingestion endpoints
 **Status:** []

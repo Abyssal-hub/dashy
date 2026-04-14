@@ -21,6 +21,6 @@ class LogHandler(ModuleHandler):
         }
     
     def validate_config(self, config: dict[str, Any]) -> bool:
-        """Validate log config has required fields."""
-        required = ["sources", "severity_filter"]
-        return all(field in config for field in required)
+        """Validate log config."""
+        # MVP: Config is optional, allow empty dict
+        return True

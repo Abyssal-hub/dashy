@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.limiter import limiter
+from app.core.limiter import limiter, conditional_limit
 from app.db.database import get_db_session
 from app.schemas.auth import LoginRequest, TokenPair, TokenRefresh
 from app.services.auth.service import (
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenPair)
-@limiter.limit("5/minute")
+@conditional_limit("5/minute")
 async def login(
     request: Request,
     response: Response,
@@ -56,7 +56,7 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenPair)
-@limiter.limit("10/minute")
+@conditional_limit("10/minute")
 async def refresh(
     request: Request,
     response: Response,
@@ -112,7 +112,7 @@ async def refresh(
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-@limiter.limit("10/minute")
+@conditional_limit("10/minute")
 async def logout(
     request: Request,
     response: Response,
