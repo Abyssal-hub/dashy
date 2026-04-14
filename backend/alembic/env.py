@@ -13,6 +13,7 @@ from app.models.user import User, RefreshToken
 from app.models.module import Module
 from app.models.dashboard import DashboardLayout
 from app.models.portfolio import Asset, Transaction
+from app.models.calendar import CalendarEvent, CalendarKeywordFilter
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
