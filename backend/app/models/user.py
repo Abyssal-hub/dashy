@@ -10,6 +10,7 @@ from app.db.database import Base
 
 if TYPE_CHECKING:
     from app.models.module import Module
+    from app.models.dashboard import DashboardLayout
 
 
 class User(Base):
@@ -23,6 +24,7 @@ class User(Base):
     
     # Relationships - using old-style for compatibility
     modules = relationship("Module", back_populates="user", cascade="all, delete-orphan")
+    dashboard_layout = relationship("DashboardLayout", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class RefreshToken(Base):

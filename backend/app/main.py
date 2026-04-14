@@ -10,6 +10,7 @@ from app.api import health
 from app.api.auth import router as auth_router
 from app.api import protected
 from app.api.modules import router as modules_router
+from app.api import dashboard as dashboard_router
 
 
 def create_app() -> FastAPI:
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router.router)
     app.include_router(protected.router)
     app.include_router(modules_router, prefix="/api")
+    app.include_router(dashboard_router.router, prefix="/api")
 
     return app
 
