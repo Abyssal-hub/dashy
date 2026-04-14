@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class ModulePosition(BaseModel):
@@ -26,8 +27,18 @@ class DashboardLayoutUpdate(DashboardLayoutBase):
 
 class DashboardLayoutResponse(DashboardLayoutBase):
     """Schema for dashboard layout response."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: str
     user_id: str
     positions: list[dict[str, Any]]
     created_at: datetime
     updated_at: datetime
+    
+    @field_validator('id', 'user_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convert UUID to string."""
+        if isinstance(v, UUID):
+            return str(v)
+        return v

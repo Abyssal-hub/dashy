@@ -89,6 +89,9 @@ Move to IN_REVIEW, notify Architect
 ```
 
 ### 3.3 Review Cycle (Architect → QA)
+
+**Rule:** If QA tests fail, QA does NOT sign off. Production cycle repeats and goes back to Developer.
+
 ```
 Developer marks DEV task IN_REVIEW
          ↓
@@ -98,29 +101,21 @@ Architect assigns QA task to validate the work
          ↓
 QA executes test plan
          ↓
-[If defects found]
+[If defects found OR tests fail]
          ↓
+QA does NOT sign off
 QA files DEF in DEFECTS.md
 QA moves DEV task to DEFECTS_FOUND
+         ↓
+Production cycle repeats → back to Developer
          ↓
 Developer fixes, moves to FIXED
 QA retests
          ↓
-[If no defects]
+[If tests pass]
          ↓
 QA marks task DONE
 Architect merges/closes
-         ↓
-[Before next DEV task assigned]
-         ↓
-Architect assigns QA-REG: run full CI / regression suite
-         ↓
-[If CI green]
-         ↓
-Next DEV task can begin
-[If CI red]
-         ↓
-Developer fixes, re-runs CI until green
 ```
 
 ---

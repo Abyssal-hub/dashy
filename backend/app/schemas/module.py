@@ -38,8 +38,8 @@ class ModuleResponse(BaseModel):
     """Schema for module response."""
     model_config = ConfigDict(from_attributes=True)
     
-    id: UUID
-    user_id: UUID
+    id: str
+    user_id: str
     module_type: str
     name: str
     config: dict[str, Any]

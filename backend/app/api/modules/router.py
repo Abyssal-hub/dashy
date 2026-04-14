@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.auth.deps import get_current_user
 from app.db.database import get_db_session
 from app.models.module import Module
-from app.models.user import User
 from app.modules import get_handler, list_module_types
 from app.schemas.module import (
     ModuleCreate,
@@ -24,7 +23,7 @@ router = APIRouter(prefix="/modules", tags=["modules"])
 async def create_module(
     module_data: ModuleCreate,
     db: AsyncSession = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ) -> Any:
     """Create a new module for the current user."""
     # Validate module type exists
@@ -45,7 +44,7 @@ async def create_module(
     
     # Create module
     module = Module(
-        user_id=current_user.id,
+        user_id=user_id,
         module_type=module_data.module_type,
         name=module_data.name,
         config=module_data.config,
@@ -67,13 +66,13 @@ async def create_module(
 @router.get("", response_model=ModuleListResponse)
 async def list_modules(
     db: AsyncSession = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ) -> Any:
     """List all modules for the current user."""
     from sqlalchemy import select
     
     result = await db.execute(
-        select(Module).where(Module.user_id == current_user.id, Module.is_active == True)
+        select(Module).where(Module.user_id == user_id, Module.is_active == True)
     )
     modules = result.scalars().all()
     
@@ -90,7 +89,7 @@ async def get_module_types() -> dict[str, list[str]]:
 async def get_module(
     module_id: UUID,
     db: AsyncSession = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ) -> Any:
     """Get a specific module by ID."""
     from sqlalchemy import select
@@ -98,7 +97,7 @@ async def get_module(
     result = await db.execute(
         select(Module).where(
             Module.id == module_id,
-            Module.user_id == current_user.id,
+            Module.user_id == user_id,
             Module.is_active == True,
         )
     )
@@ -118,7 +117,7 @@ async def update_module(
     module_id: UUID,
     module_data: ModuleUpdate,
     db: AsyncSession = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ) -> Any:
     """Update a module."""
     from sqlalchemy import select
@@ -126,7 +125,7 @@ async def update_module(
     result = await db.execute(
         select(Module).where(
             Module.id == module_id,
-            Module.user_id == current_user.id,
+            Module.user_id == user_id,
             Module.is_active == True,
         )
     )
@@ -165,7 +164,7 @@ async def update_module(
 async def delete_module(
     module_id: UUID,
     db: AsyncSession = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ) -> None:
     """Soft delete a module."""
     from sqlalchemy import select
@@ -173,7 +172,7 @@ async def delete_module(
     result = await db.execute(
         select(Module).where(
             Module.id == module_id,
-            Module.user_id == current_user.id,
+            Module.user_id == user_id,
             Module.is_active == True,
         )
     )
@@ -194,7 +193,7 @@ async def get_module_data(
     module_id: UUID,
     size: str | None = None,
     db: AsyncSession = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ) -> Any:
     """Get data for a module from its handler."""
     from sqlalchemy import select
@@ -202,7 +201,7 @@ async def get_module_data(
     result = await db.execute(
         select(Module).where(
             Module.id == module_id,
-            Module.user_id == current_user.id,
+            Module.user_id == user_id,
             Module.is_active == True,
         )
     )

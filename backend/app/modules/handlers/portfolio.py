@@ -23,6 +23,6 @@ class PortfolioHandler(ModuleHandler):
         }
     
     def validate_config(self, config: dict[str, Any]) -> bool:
-        """Validate portfolio config has required fields."""
-        required = ["symbols"]
-        return all(field in config for field in required)
+        """Validate portfolio config."""
+        # MVP: Config is optional, allow empty dict
+        return True
