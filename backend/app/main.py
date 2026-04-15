@@ -73,4 +73,11 @@ def create_app() -> FastAPI:
     return app
 
 
-app_factory = create_app()
+# Factory function for uvicorn --factory flag
+def app_factory() -> FastAPI:
+    """Factory function for creating the FastAPI app."""
+    return create_app()
+
+
+# For backwards compatibility and non-factory usage
+app = create_app()
