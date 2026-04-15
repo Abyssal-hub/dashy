@@ -19,7 +19,9 @@ from app.api import calendar as calendar_router
 
 
 # Path to frontend static files
-FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
+# In Docker: mounted at /frontend
+# Local dev: relative to backend/app/main.py
+FRONTEND_DIR = Path("/frontend") if Path("/frontend").exists() else Path(__file__).parent.parent.parent / "frontend"
 
 
 def create_app() -> FastAPI:
