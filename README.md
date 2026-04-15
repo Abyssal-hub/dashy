@@ -7,11 +7,30 @@ A personal, extensible monitoring dashboard for tracking portfolios, global fina
 ```bash
 cd personal-monitoring-dashboard
 
-# Start all services
-docker-compose up --build
+# Start everything with one command
+./launch.sh
 
-# Backend will be available at http://localhost:8000
-# Frontend (when ready) at http://localhost:3000
+# Or use docker-compose directly
+docker-compose up --build
+```
+
+The launch script will:
+- Check for available ports
+- Build and start all services (Postgres, Redis, Backend)
+- Run database migrations automatically
+- Wait for services to be healthy
+- Show you the URLs to access the dashboard
+
+**Access the app:**
+- Dashboard: http://localhost:8000/dashboard.html
+- API Docs: http://localhost:8000/docs
+- Health: http://localhost:8000/health
+
+**Other commands:**
+```bash
+./launch.sh stop    # Stop all services
+./launch.sh logs    # View service logs
+./launch.sh status  # Check service status
 ```
 
 ## Project Structure
