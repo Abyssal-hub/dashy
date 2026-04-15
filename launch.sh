@@ -45,44 +45,57 @@ check_docker() {
     echo -e "${GREEN}✓ Docker and Docker Compose available${NC}"
 }
 
-check_ports() {
-    echo -e "${BLUE}Checking ports...${NC}"
+find_available_port() {
+    local start_port=$1
+    local port=$start_port
     
-    local ports=($POSTGRES_PORT $REDIS_PORT $BACKEND_PORT)
-    local names=("PostgreSQL" "Redis" "Backend")
-    local conflict=false
-    
-    for i in "${!ports[@]}"; do
-        local port=${ports[$i]}
-        local name=${names[$i]}
-        
-        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 || netstat -tuln 2>/dev/null | grep -q ":$port "; then
-            echo -e "${YELLOW}⚠ Port $port is already in use${NC}"
-            conflict=true
-        else
-            echo -e "${GREEN}✓ Port $port available for $name${NC}"
+    while [ $port -lt 65535 ]; do
+        if ! lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 && \
+           ! netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            echo $port
+            return 0
         fi
+        port=$((port + 1))
     done
     
-    if [ "$conflict" = true ]; then
-        echo ""
-        echo -e "${YELLOW}To use different ports, set environment variables:${NC}"
-        echo "  POSTGRES_PORT=5433 REDIS_PORT=6380 BACKEND_PORT=8080 ./launch.sh"
-        echo ""
-    fi
+    echo -e "${RED}❌ No available ports found starting from $start_port${NC}"
+    return 1
+}
+
+check_and_assign_ports() {
+    echo -e "${BLUE}Checking and assigning ports...${NC}"
+    
+    # Try to use environment-provided ports first, then defaults
+    local requested_postgres=${POSTGRES_PORT:-5432}
+    local requested_redis=${REDIS_PORT:-6379}
+    local requested_backend=${BACKEND_PORT:-8000}
+    
+    # Check and find available ports
+    export POSTGRES_PORT=$(find_available_port $requested_postgres)
+    export REDIS_PORT=$(find_available_port $requested_redis)
+    export BACKEND_PORT=$(find_available_port $requested_backend)
+    
+    # Show port assignments
+    echo ""
+    echo -e "${GREEN}Port assignments:${NC}"
+    [ "$POSTGRES_PORT" != "$requested_postgres" ] && \
+        echo "  PostgreSQL: $requested_postgres → ${GREEN}$POSTGRES_PORT${NC} (auto-assigned)" || \
+        echo "  PostgreSQL: ${GREEN}$POSTGRES_PORT${NC}"
+    [ "$REDIS_PORT" != "$requested_redis" ] && \
+        echo "  Redis:      $requested_redis → ${GREEN}$REDIS_PORT${NC} (auto-assigned)" || \
+        echo "  Redis:      ${GREEN}$REDIS_PORT${NC}"
+    [ "$BACKEND_PORT" != "$requested_backend" ] && \
+        echo "  Backend:    $requested_backend → ${GREEN}$BACKEND_PORT${NC} (auto-assigned)" || \
+        echo "  Backend:    ${GREEN}$BACKEND_PORT${NC}"
+    echo ""
 }
 
 start_services() {
     print_banner
     check_docker
-    check_ports
+    check_and_assign_ports
     
-    echo ""
     echo -e "${BLUE}Starting services...${NC}"
-    echo "  PostgreSQL: port $POSTGRES_PORT"
-    echo "  Redis:      port $REDIS_PORT"
-    echo "  Backend:    port $BACKEND_PORT"
-    echo ""
     
     # Build and start
     docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up --build -d
