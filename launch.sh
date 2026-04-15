@@ -155,6 +155,14 @@ show_logs() {
     docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE logs -f
 }
 
+rebuild_services() {
+    echo -e "${BLUE}Rebuilding services (no cache)...${NC}"
+    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE down 2>/dev/null || true
+    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE build --no-cache
+    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up -d
+    echo -e "${GREEN}✓ Services rebuilt and started${NC}"
+}
+
 reset_data() {
     echo -e "${RED}⚠ This will delete all database data!${NC}"
     read -p "Are you sure? [y/N] " -n 1 -r
@@ -186,11 +194,14 @@ case "${1:-start}" in
     logs)
         show_logs
         ;;
+    rebuild)
+        rebuild_services
+        ;;
     reset)
         reset_data
         ;;
     *)
-        echo "Usage: $0 [start|stop|restart|status|logs|reset]"
+        echo "Usage: $0 [start|stop|restart|status|logs|rebuild|reset]"
         echo ""
         echo "Commands:"
         echo "  start   - Start all services (default)"
@@ -198,6 +209,7 @@ case "${1:-start}" in
         echo "  restart - Restart all services"
         echo "  status  - Show service status"
         echo "  logs    - View service logs"
+        echo "  rebuild - Rebuild and restart (use after Dockerfile changes)"
         echo "  reset   - Stop and delete all data (DANGER)"
         echo ""
         echo "Environment variables:"
