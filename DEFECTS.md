@@ -76,6 +76,8 @@ Also fixed rate limiting issue by:
 **Status:** OPEN / FIXED / CLOSED  
 **Severity:** Blocker / Major / Minor / Cosmetic  
 **Discovered:** YYYY-MM-DD  
+**Reporter:** (who found it: Developer/QA/Architect)  
+**Owner:** (who fixes it: Developer/QA/Architect)  
 **Related To:** TASK-XXX
 
 ### Summary

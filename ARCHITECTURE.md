@@ -241,6 +241,24 @@ The `GET /modules/{id}/data` endpoint:
 - **Alert Evaluator:** Event-driven (per ingest batch) + scheduled sweep (every 5 minutes via APScheduler).
 - **Health Checker:** Periodic DB/Redis connectivity checks logged to Log Module.
 
+### 5.5 HTTP Status Code Standards
+
+| Status | Meaning | When to Use |
+|--------|---------|-------------|
+| **200** | OK | Successful GET, PUT, PATCH operations |
+| **201** | Created | Successful POST that creates a resource |
+| **204** | No Content | Successful DELETE or operations with no response body |
+| **400** | Bad Request | Malformed request (JSON parse error, missing required fields) |
+| **401** | Unauthorized | Missing or invalid authentication token |
+| **403** | Forbidden | Authenticated but not authorized (not used in MVP) |
+| **404** | Not Found | Resource does not exist |
+| **422** | Unprocessable Entity | Validation error (semantically correct but invalid values) |
+
+**MVP Specific Patterns:**
+- Auth failures return **403** (implementation choice via `get_current_user`)
+- Invalid module types return **422** (validation error)
+- Missing auth token returns **403** (not 401, per current implementation)
+
 ---
 
 ## 6. Data Architecture

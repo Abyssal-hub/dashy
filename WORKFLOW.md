@@ -94,6 +94,16 @@ Move to IN_REVIEW, notify Architect
 
 **CRITICAL: QA only signs off when 100% of tests pass. No partial sign-offs allowed.**
 
+**Test Ownership Rules (from DEF-002):**
+- **Developer:** Cannot modify tests. Tests are the specification.
+- **QA:** CAN modify tests when test expectations are wrong/incorrect.
+- **Architect:** Resolves specification conflicts when tests contradict each other.
+
+When tests fail:
+1. Developer fixes application code (NOT tests)
+2. If test expectations are wrong, QA fixes the tests
+3. If there's a conflict between test files, Architect decides which is correct
+
 ```
 Developer marks DEV task IN_REVIEW
          ↓
