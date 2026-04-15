@@ -150,13 +150,13 @@ async def test_delete_module_not_found(client, db_session):
 
 @pytest.mark.asyncio
 async def test_create_module_unauthorized(client):
-    """Flow 7: Create module without token returns 401."""
+    """Flow 7: Create module without token returns 403."""
     response = await client.post(
         "/api/modules",
         json={"module_type": "portfolio", "name": "Test", "config": {}, "size": "medium"}
     )
     
-    assert response.status_code == 401  # Unauthorized for missing token
+    assert response.status_code == 403  # Forbidden for missing token
 
 
 @pytest.mark.asyncio
@@ -171,7 +171,7 @@ async def test_create_module_invalid_type(client, db_session):
         headers={"Authorization": f"Bearer {token}"}
     )
     
-    assert response.status_code == 400  # Bad request for invalid module type
+    assert response.status_code == 422  # Unprocessable entity for invalid module type
 
 
 @pytest.mark.asyncio

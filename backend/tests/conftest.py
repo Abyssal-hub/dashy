@@ -5,10 +5,13 @@ from testcontainers.redis import RedisContainer
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
+# Disable rate limiting BEFORE importing app
+from app.core.config import settings
+settings.rate_limit_enabled = False
+
 from app.main import create_app
 from app.db.database import Base, get_db_session
 from app.services.redis_client import get_redis_client
-from app.core.config import settings
 
 
 @pytest_asyncio.fixture(scope="session")
