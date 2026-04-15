@@ -17,8 +17,8 @@ class TestLaunchScript:
     @pytest.fixture(scope="class")
     def launch_stack(self):
         """Start services using launch.sh and cleanup after test."""
-        # Get the project root directory
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Get the project root directory (parent of backend/)
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
         # Start services using launch.sh
         print("\nStarting services with launch.sh...")
@@ -135,7 +135,7 @@ class TestLaunchScript:
         # This test just verifies the find_available_port logic exists
         # The actual port collision handling is tested by the launch_stack fixture
         # when run on a system with potential port conflicts
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         launch_script = os.path.join(project_root, "launch.sh")
         
         # Check that the script contains the auto-assignment function
