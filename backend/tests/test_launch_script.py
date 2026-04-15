@@ -79,7 +79,7 @@ class TestLaunchScript:
             )
             pytest.fail("Services did not become healthy within 60 seconds")
         
-        yield backend_port
+        yield (backend_port, project_root)
         
         # Cleanup after test
         print("\nStopping services...")
@@ -92,7 +92,7 @@ class TestLaunchScript:
     
     def test_services_start_with_launch_script(self, launch_stack):
         """E2E-001: launch.sh can start all services and they become healthy."""
-        port = launch_stack
+        port, project_root = launch_stack
         
         # Verify health endpoint
         response = requests.get(f"http://localhost:{port}/health", timeout=5)
@@ -104,7 +104,7 @@ class TestLaunchScript:
     
     def test_api_docs_accessible(self, launch_stack):
         """E2E-002: API docs are accessible after launch."""
-        port = launch_stack
+        port, project_root = launch_stack
         
         response = requests.get(f"http://localhost:{port}/docs", timeout=5)
         assert response.status_code == 200
@@ -113,15 +113,62 @@ class TestLaunchScript:
     
     def test_dashboard_served(self, launch_stack):
         """E2E-003: Dashboard HTML is served by backend."""
-        port = launch_stack
+        port, project_root = launch_stack
         
         response = requests.get(f"http://localhost:{port}/dashboard.html", timeout=5)
         assert response.status_code == 200
         assert "Dashboard" in response.text or "dashy" in response.text.lower() or "<html" in response.text.lower()
         print("✓ Dashboard accessible")
     
+    def test_launch_logs_no_errors(self, launch_stack):
+        """E2E-004: Check launch.sh logs for startup errors."""
+        port, project_root = launch_stack
+        
+        # Get logs and check for critical errors
+        logs = subprocess.run(
+            ["./launch.sh", "logs"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        log_output = logs.stdout + logs.stderr
+        
+        # List of critical error patterns that indicate startup failure
+        critical_errors = [
+            "Error loading ASGI",
+            "Traceback (most recent call last)",
+            "ModuleNotFoundError",
+            "ImportError",
+            "Failed to start",
+            "Connection refused",
+            "FAILED: No 'script_location'",
+            "FAILED: Target database is not up to date",
+        ]
+        
+        # Check for critical errors in logs (but allow migrate container errors
+        # since migrations run once and container exits)
+        lines = log_output.splitlines()
+        errors_found = []
+        
+        for line in lines:
+            # Skip migrate container lines (they exit after running migrations)
+            if "migrate_1" in line and any(e in line for e in critical_errors):
+                continue
+            # Check backend and postgres/redis for critical errors
+            for error in critical_errors:
+                if error in line:
+                    errors_found.append(line)
+        
+        if errors_found:
+            print(f"Critical errors found in logs:\n{chr(10).join(errors_found)}")
+            pytest.fail(f"Found {len(errors_found)} critical error(s) in service logs")
+        
+        print("✓ No critical errors in service logs")
+    
     def test_port_auto_assignment(self):
-        """E2E-004: launch.sh can auto-assign ports if defaults are taken."""
+        """E2E-005: launch.sh can auto-assign ports if defaults are taken."""
         import socket
         
         # Find two available ports
