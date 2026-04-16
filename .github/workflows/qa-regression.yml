@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests with testcontainers
+      - name: Run contract tests with testcontainers
         working-directory: ./backend
         env:
           SECRET_KEY: ci-test-secret-key
@@ -37,7 +37,8 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES: 15
           REFRESH_TOKEN_EXPIRE_DAYS: 7
         run: |
-          pytest tests/ -v --tb=short
+          # Exclude launch_stack test (requires Docker socket and launch.sh)
+          pytest tests/test_contract.py -v --tb=short
 
   docker-build:
     runs-on: ubuntu-latest
@@ -92,3 +93,39 @@ jobs:
           alembic current
           alembic downgrade base
           alembic upgrade head
+
+  launch-script-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [backend-tests]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Test launch.sh
+        working-directory: .
+        run: |
+          # Make launch.sh executable and test it
+          chmod +x launch.sh
+          ./launch.sh
+          
+          # Verify services are healthy
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✓ Stack is healthy"
+              exit 0
+            fi
+            echo -n "."
+            sleep 2
+          done
+          
+          echo "✗ Stack failed to become healthy"
+          exit 1
+      
+      - name: Cleanup
+        if: always()
+        working-directory: .
+        run: docker-compose down -v

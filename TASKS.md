@@ -654,9 +654,53 @@
 - [ ] Measure: Database query performance
 - [ ] Document: Resource usage (CPU, memory)
 
----
-
-## Defects (DEF)
+### QA-011: Contract & Visual Regression Tests
+**Status:** [READY_FOR_SIGN_OFF]
+**Priority:** P1
+**Assigned:** QA
+**Depends:** QA-MVP-001 (MVP flow tests establish patterns)
+**Source:** UX-1.1, UX-2.3, ARCH-5.2, **B07**
+**Deliverable:** 
+- `QA-011-CONTRACT-VISUAL-TEST-PLAN.md` (test plan document)
+- `backend/tests/test_contract.py` (API contract tests)
+- `e2e/test_visual_regression.py` (visual regression tests)
+- `scripts/run-qa-tests.sh` (automated runner)
+**Acceptance Criteria:**
+- [x] Test plan follows QA-001 format with test IDs, traceability, pass/fail criteria
+- [x] **11 contract tests implemented and PASSING** (QA-CONTRACT-001 to QA-CONTRACT-012, **minus QA-CONTRACT-007 per B07**)
+- [x] Contract tests validate API schema using Pydantic models
+- [x] OpenAPI schema snapshot baseline created for breaking change detection
+- [x] 5 visual regression tests implemented (QA-VISUAL-001 to QA-VISUAL-005)
+- [x] Visual baselines established for login page (desktop, mobile, error)
+- [x] Visual baselines established for dashboard (empty, with portfolio)
+- [x] Automated test runner script with service health checks
+- [x] QA documentation in `e2e/README-QA.md` with troubleshooting guide
+- [x] **All P1 contract tests pass (100% - 11/11 passing)**
+- [x] No DEF-XXX defects filed against contract/visual tests
+**Gate:** Must pass before Phase 1 regression gate (QA-REG-006)
+**Notes:** 
+- **✅ ALL 6 Defects RESOLVED:**
+  - **DEF-011-001:** RESOLVED — QA updated test for opaque tokens (per B05)
+  - **DEF-011-002:** FIXED — Developer added register endpoint
+  - **DEF-011-003:** RESOLVED — QA updated test schemas (per B06)
+  - **DEF-011-004:** FIXED — QA removed broken imports
+  - **DEF-011-005:** FIXED — QA added json import
+  - **DEF-011-006:** FIXED — QA added Playwright fixtures
+- **Architect Decision B07:** Module-centric layout — removed QA-CONTRACT-007 (dashboard layout endpoint test)
+- **✅ 100% Contract Tests Pass:** 11/11 tests passing
+- **Added QA-CONTRACT-012:** Token refresh rotation test (per Architect review)
+- **Next:** QA SIGN-OFF
+**Defects Status:**
+- DEF-011-001: RESOLVED (QA updated test per Architect B05)
+- DEF-011-002: FIXED (Developer)
+- DEF-011-003: RESOLVED (QA updated test per Architect B06)
+- DEF-011-004: FIXED (QA)
+- DEF-011-005: FIXED (QA)
+- DEF-011-006: FIXED (QA)
+**Architect Rulings Applied:**
+- **B05:** Opaque refresh tokens (security) — Test updated to accept
+- **B06:** API response includes layout fields — Test schemas updated
+- **B07:** Module-centric layout (MVP) — QA-CONTRACT-007 removed, grid props hardcoded
 
 **No defects filed yet.**
 

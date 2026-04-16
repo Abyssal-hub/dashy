@@ -271,8 +271,17 @@ The `GET /modules/{id}/data` endpoint:
 
 #### Module System Tables
 - `module_types` — Registry of supported module types
-- `modules` — User-configured module instances (settings stored as JSONB)
-- `dashboard_layouts` — Grid positions (`x`, `y`, `w`, `h`) per module
+- `modules` — User-configured module instances with inline layout positions:
+  - `position_x`, `position_y` — Grid coordinates
+  - `width`, `height` — Grid dimensions (optional)
+  - `size` — Preset size category (small/medium/large)
+  - `config` — Module-specific settings (JSONB)
+  - `refresh_interval` — Data refresh rate in seconds
+
+**Note:** Per **Decision B07**, layout is module-centric for MVP. Grid configuration (`columns=12`, `rowHeight=100`) is hardcoded in frontend. Future multi-layout support may introduce separate layout tables.
+
+#### Legacy/Reserved (MVP)
+- `dashboard_layouts` — Reserved for future multi-layout support. Not used in MVP.
 
 #### Calendar Module Tables
 - `calendar_events` — Personal CRUD events + scraped financial events
@@ -626,6 +635,9 @@ If no objection, these will be applied during implementation.
 | A01 | Hybrid alert evaluation (event + scheduled) | Approved |
 | A02 | 15-minute alert cooldown | Approved |
 | I01 | Docker Compose local deployment | Approved |
+| B05 | Opaque refresh tokens (security) | **DECIDED 2024-04-16** — See DEF-011-001 |
+| B06 | API response includes layout fields | **DECIDED 2024-04-16** — See DEF-011-003 |
+| B07 | Module-centric layout (MVP) | **DECIDED 2026-04-16** — Positions inline in modules table, no dashboard_layouts endpoint for MVP. See QA-011. |
 
 ---
 

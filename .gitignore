@@ -39,3 +39,7 @@ Thumbs.db
 
 # Docker
 postgres_data/
+
+# QA Test Artifacts (temporary only - baselines are committed)
+e2e/visual-diffs/
+backend/tests/snapshots/*.tmp

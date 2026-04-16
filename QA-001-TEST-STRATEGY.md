@@ -192,3 +192,75 @@ A module handler is **done** when:
 
 This test strategy is ready for Architect review. Upon approval, QA will proceed with test infrastructure setup and execution of QA-002 through QA-010.
 
+---
+
+## Appendix A: Architecture-First Testing (Lesson from QA-011)
+
+**Critical Rule for All Future QA Work:**
+
+> **Architecture is the single source of truth. Tests validate compliance — they don't enforce personal design preferences.**
+
+### The Anti-Pattern (What Happened in QA-011)
+
+```
+Architecture (has layout fields in modules table)
+        ↓
+Implementation ✓ (followed architecture — returns layout fields)
+        ↓
+Test ✗ (IGNORED architecture — expected minimal fields)
+        ↓
+Result: 6 defects, rework, delays
+```
+
+**Mismatches discovered:**
+| Assumption | Reality | Architecture Said |
+|------------|---------|-------------------|
+| JWT refresh tokens | Opaque strings | `refresh_tokens` table exists |
+| 8 response fields | 14 fields | `modules` has layout columns |
+| User object from register | TokenPair | Immediate login flow designed |
+
+### The Correct Pattern (What We Learned)
+
+```
+Architecture (single source of truth)
+        ↓
+    ┌───┴───┐
+    ↓       ↓
+Implementation   Tests (both read from architecture)
+    └───────┘
+        ↓
+    PASS (first time)
+```
+
+### Before Writing ANY Test
+
+**Mandatory Checklist:**
+1. ✅ Read `ARCHITECTURE.md` Sections 5-7 (API, Data, Module specs)
+2. ✅ Check database schema in `app/models/*.py` for field definitions
+3. ✅ Verify actual API response structure by calling the endpoint
+4. ✅ Write tests to match reality — not REST conventions or "best practices"
+5. ✅ If unclear, ask Architect — don't assume
+
+### When Tests Fail
+
+**Decision Tree:**
+```
+Test fails
+    ↓
+Is implementation following ARCHITECTURE.md?
+    ↓ YES → Update test (QA responsibility)
+    ↓ NO  → File DEF-XXX (Developer responsibility)
+```
+
+**Never:** Change implementation to match test without Architect approval.
+
+### Sign-Off Requirement
+
+All future QA test plans must include:
+> "I confirm I have read ARCHITECTURE.md Sections [X-Y] and my tests validate the implemented architecture, not an assumed ideal design."
+
+---
+
+**Document Updated:** 2026-04-16 (after QA-011 completion)
+**Based on:** Real defects and rework from QA-011 contract test implementation
+

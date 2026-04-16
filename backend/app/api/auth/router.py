@@ -1,20 +1,68 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.limiter import limiter, conditional_limit
 from app.db.database import get_db_session
 from app.schemas.auth import LoginRequest, TokenPair, TokenRefresh
+from app.models.user import User
 from app.services.auth.service import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
+    create_user,
     verify_refresh_token,
     revoke_refresh_token,
 )
 from app.services.auth.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.post("/register", response_model=TokenPair, status_code=status.HTTP_201_CREATED)
+@conditional_limit("3/minute")
+async def register(
+    request: Request,
+    response: Response,
+    login_data: LoginRequest,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Register a new user and return access + refresh tokens."""
+    from app.services.auth.service import create_user
+    
+    # Check if user already exists
+    result = await db.execute(
+        select(User).where(User.email == login_data.email)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+    
+    # Create new user
+    user = await create_user(db, login_data.email, login_data.password)
+    
+    # Generate tokens
+    access_token = create_access_token(str(user.id))
+    refresh_token_str, _ = await create_refresh_token(db, str(user.id))
+    
+    # Set refresh token as httpOnly cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token_str,
+        httponly=True,
+        secure=settings.environment != "local",
+        samesite="strict",
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        path="/auth/refresh",
+    )
+    
+    return TokenPair(
+        access_token=access_token,
+        refresh_token=refresh_token_str,
+    )
 
 
 @router.post("/login", response_model=TokenPair)
