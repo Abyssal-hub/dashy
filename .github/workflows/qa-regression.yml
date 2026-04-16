@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run contract tests with testcontainers
+      - name: Run tests (exclude launch tests)
         working-directory: ./backend
         env:
           SECRET_KEY: ci-test-secret-key
@@ -37,8 +37,8 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES: 15
           REFRESH_TOKEN_EXPIRE_DAYS: 7
         run: |
-          # Exclude launch_stack test (requires Docker socket and launch.sh)
-          pytest tests/test_contract.py -v --tb=short
+          # Exclude launch script tests (require Docker Compose)
+          pytest tests/ -v --tb=short --ignore=tests/test_launch_script.py --ignore=tests/test_launch_stack.py
 
   docker-build:
     runs-on: ubuntu-latest
@@ -105,27 +105,36 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
       
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+          docker-compose --version
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install Python dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest requests
+      
       - name: Test launch.sh
         working-directory: .
         run: |
           # Make launch.sh executable and test it
           chmod +x launch.sh
-          ./launch.sh
           
-          # Verify services are healthy
-          for i in {1..30}; do
-            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-              echo "✓ Stack is healthy"
-              exit 0
-            fi
-            echo -n "."
-            sleep 2
-          done
-          
-          echo "✗ Stack failed to become healthy"
-          exit 1
+          # Run the launch script tests
+          cd backend
+          pytest tests/test_launch_script.py -v --tb=short
       
       - name: Cleanup
         if: always()
         working-directory: .
-        run: docker-compose down -v
+        run: |
+          ./launch.sh stop 2>/dev/null || true
+          docker-compose down -v 2>/dev/null || true
