@@ -30,8 +30,8 @@ def create_app() -> FastAPI:
         description="Personal Monitoring Dashboard API",
         version="1.0.0",
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url="/docs" if settings.debug else None,
+        redoc_url="/redoc" if settings.debug else None,
     )
 
     # Rate limiter
@@ -69,12 +69,6 @@ def create_app() -> FastAPI:
         # Serve dashboard.html at /dashboard
         @app.get("/dashboard")
         async def serve_dashboard():
-            from fastapi.responses import FileResponse
-            return FileResponse(FRONTEND_DIR / "dashboard.html")
-        
-        # Also serve at /dashboard.html for backward compatibility
-        @app.get("/dashboard.html")
-        async def serve_dashboard_html():
             from fastapi.responses import FileResponse
             return FileResponse(FRONTEND_DIR / "dashboard.html")
 

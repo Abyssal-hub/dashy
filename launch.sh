@@ -1,6 +1,6 @@
 #!/bin/bash
 # Launch script for Personal Monitoring Dashboard MVP
-# Usage: ./launch.sh [start|stop|restart|status|logs|rebuild|reset]
+# Usage: ./launch.sh [start|stop|restart|status]
 
 set -e
 
@@ -152,8 +152,7 @@ show_status() {
 }
 
 show_logs() {
-    # Use --tail to avoid hanging indefinitely (for CI/test compatibility)
-    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE logs --tail=200
+    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE logs -f
 }
 
 rebuild_services() {
@@ -209,7 +208,7 @@ case "${1:-start}" in
         echo "  stop    - Stop all services"
         echo "  restart - Restart all services"
         echo "  status  - Show service status"
-        echo "  logs    - View service logs (last 200 lines)"
+        echo "  logs    - View service logs"
         echo "  rebuild - Rebuild and restart (use after Dockerfile changes)"
         echo "  reset   - Stop and delete all data (DANGER)"
         echo ""
