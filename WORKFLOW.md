@@ -2,7 +2,40 @@
 
 **Version:** 1.0  
 **Effective Date:** 2024-01-15  
-**Team:** Architect (Lead), Developer, QA
+**Team:** Architect (Lead), Developer, QA, UI/UX Designer
+
+---
+
+## Roles & Responsibilities
+
+### Architect (Lead)
+- Defines technical architecture in `ARCHITECTURE.md`
+- Assigns tasks and manages workflow
+- Reviews structural code changes
+- Resolves specification conflicts
+- Owns `DECISIONS.md` and `TASKS.md`
+
+### Developer
+- Implements features per `ARCHITECTURE.md` spec
+- Writes unit tests for implemented code
+- **Cannot modify tests** - tests are the specification
+- Reports blockers to Architect
+- Commits and pushes per milestone
+
+### QA
+- Validates correctness and edge cases
+- **Can modify tests** when expectations are wrong
+- Files defects in `DEFECTS.md`
+- Only signs off when 100% of tests pass
+- Executes regression test suite
+
+### UI/UX Designer
+- Designs user interfaces and experiences
+- Creates wireframes, mockups, and prototypes
+- Defines visual design systems and component libraries
+- Ensures accessibility and usability standards
+- Reviews frontend implementations for design fidelity
+- Updates design documentation
 
 ---
 
@@ -53,6 +86,7 @@ BACKLOG → ASSIGNED → IN_PROGRESS → IN_REVIEW → DONE
 - `DEV-XXX`: Development tasks (code implementation)
 - `QA-XXX`: QA tasks (test writing, validation)
 - `DEF-XXX`: Defects (bug reports)
+- `UI-XXX`: UI/UX tasks (design, mockups, component libraries)
 
 ---
 
