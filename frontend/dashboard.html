@@ -13,16 +13,25 @@
                 extend: {
                     colors: {
                         dark: {
+                            950: '#050507',
                             900: '#0a0a0f',
+                            850: '#0f0f16',
                             800: '#12121a',
+                            750: '#161620',
                             700: '#1a1a25',
+                            650: '#1e1e2a',
                             600: '#22222e',
+                            550: '#262633',
                             500: '#2a2a3a',
+                            450: '#2e2e3f',
+                            400: '#323244',
                         },
                         accent: {
                             purple: '#8b5cf6',
                             violet: '#7c3aed',
                             cyan: '#06b6d4',
+                            blue: '#3b82f6',
+                            pink: '#ec4899',
                         },
                         status: {
                             online: '#10b981',
@@ -39,22 +48,93 @@
         }
     </script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0a0a0f;
+        * {
+            box-sizing: border-box;
         }
         
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #050507;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a3a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3a4a;
+        }
+        
+        /* Glass morphism cards */
         .glass-card {
-            background: linear-gradient(145deg, #1a1a25 0%, #151520 100%);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(145deg, #1a1a25 0%, #12121a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
         }
         
         .glass-card:hover {
-            border-color: rgba(139, 92, 246, 0.2);
-            box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.15);
+            box-shadow: 0 8px 32px rgba(139, 92, 246, 0.12);
         }
         
+        /* Sidebar styles */
+        .sidebar {
+            background: linear-gradient(180deg, #0f0f16 0%, #0a0a0f 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+        
+        .nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 24px;
+            background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+            border-radius: 0 2px 2px 0;
+        }
+        
+        /* Header tab styles */
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .tab-btn.active {
+            color: #fff;
+            background: rgba(139, 92, 246, 0.15);
+            border-bottom: 2px solid #8b5cf6;
+        }
+        
+        /* Brand gradient */
         .brand-gradient {
             background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #7c3aed 100%);
         }
@@ -66,19 +146,40 @@
             background-clip: text;
         }
         
-        .glow-text {
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
+        /* Glow effects */
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
         }
         
-        .icon-badge {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
-            border: 1px solid rgba(139, 92, 246, 0.3);
+        .text-glow {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
         }
         
+        /* Progress bars */
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+        }
+        
+        .progress-bar-warning {
+            background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+        }
+        
+        .progress-bar-purple {
+            background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+        }
+        
+        /* Status indicators */
         .status-dot {
             box-shadow: 0 0 8px currentColor;
         }
         
+        /* Icon badges */
+        .icon-badge {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        /* Button styles */
         .btn-primary {
             background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
             border: 1px solid rgba(139, 92, 246, 0.5);
@@ -89,12 +190,12 @@
             box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
         }
         
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 1.25rem;
+        /* Time widget */
+        .time-glow {
+            text-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.3);
         }
         
+        /* Loading spinner */
         .loading-spinner {
             border: 3px solid rgba(139, 92, 246, 0.1);
             border-top: 3px solid #8b5cf6;
@@ -109,101 +210,290 @@
             100% { transform: rotate(360deg); }
         }
         
-        .progress-bar {
-            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        /* Widget grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.25rem;
         }
         
-        .progress-bar-warning {
-            background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        @media (max-width: 1280px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(8, 1fr);
+            }
         }
         
-        .time-glow {
-            text-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.3);
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
         
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        /* Pulse animation for live indicators */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-        ::-webkit-scrollbar-track {
-            background: #0a0a0f;
+        
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #2a2a3a;
-            border-radius: 4px;
+        
+        /* Search input */
+        .search-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3a3a4a;
+        
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(139, 92, 246, 0.3);
+            outline: none;
         }
     </style>
 </head>
-<body class="bg-dark-900 min-h-screen text-gray-200">
-    <!-- Header -->
-    <nav class="bg-dark-800/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl brand-gradient flex items-center justify-center shadow-lg shadow-purple-500/20">
-                        <i class="fas fa-chart-line text-white text-lg"></i>
-                    </div>
-                    <span class="text-2xl font-bold brand-text tracking-tight">Dashy</span>
+<body class="bg-dark-950 min-h-screen text-gray-200 flex">
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 flex-shrink-0 flex flex-col fixed h-full z-50">
+        <!-- Logo -->
+        <div class="p-6 border-b border-white/5">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl brand-gradient flex items-center justify-center shadow-lg shadow-purple-500/20">
+                    <i class="fas fa-chart-line text-white text-lg"></i>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <span class="bg-dark-700 text-gray-400 text-xs font-medium px-3 py-1.5 rounded-full border border-white/5">
-                        MVP v1.0
-                    </span>
-                    <button onclick="openAddModuleModal()" class="btn-primary text-white px-4 py-2 rounded-xl transition flex items-center space-x-2">
-                        <i class="fas fa-plus text-sm"></i>
-                        <span>Add Module</span>
-                    </button>
-                    <button onclick="logout()" class="w-10 h-10 rounded-xl bg-dark-700 hover:bg-dark-600 flex items-center justify-center transition border border-white/5">
-                        <i class="fas fa-sign-out-alt text-gray-400"></i>
-                    </button>
+                <div>
+                    <span class="text-xl font-bold brand-text tracking-tight">Dashy</span>
+                    <div class="text-xs text-gray-500">v1.0</div>
                 </div>
             </div>
         </div>
-    </nav>
+        
+        <!-- Navigation -->
+        <nav class="flex-1 py-4 px-3 space-y-1">
+            <a href="#" class="nav-item active relative flex items-center space-x-3 px-4 py-3 rounded-xl text-white">
+                <i class="fas fa-th-large w-5 text-center"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white">
+                <i class="fas fa-eye w-5 text-center"></i>
+                <span class="font-medium">Monitors</span>
+                <span class="ml-auto bg-accent-purple/20 text-accent-purple text-xs px-2 py-0.5 rounded-full">3</span>
+            </a>
+            <a href="#" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white">
+                <i class="fas fa-calendar-alt w-5 text-center"></i>
+                <span class="font-medium">Calendar</span>
+            </a>
+            <a href="#" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white">
+                <i class="fas fa-bell w-5 text-center"></i>
+                <span class="font-medium">Alerts</span>
+                <span class="ml-auto bg-status-critical/20 text-status-critical text-xs px-2 py-0.5 rounded-full">2</span>
+            </a>
+            <a href="#" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white">
+                <i class="fas fa-cog w-5 text-center"></i>
+                <span class="font-medium">Settings</span>
+            </a>
+        </nav>
+        
+        <!-- User Profile -->
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center">
+                    <i class="fas fa-user text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-white truncate">User</div>
+                    <div class="text-xs text-gray-500 truncate">Online</div>
+                </div>
+                <button onclick="logout()" class="w-8 h-8 rounded-lg hover:bg-dark-700 flex items-center justify-center text-gray-400 hover:text-white transition">
+                    <i class="fas fa-sign-out-alt text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Time Widget (like NewsMonitor) -->
-        <div id="time-widget" class="glass-card rounded-2xl p-6 mb-6 hidden">
-            <div class="flex items-center justify-center space-x-2 text-accent-purple mb-2">
-                <i class="fas fa-moon text-sm"></i>
-                <span class="text-xs font-medium uppercase tracking-wider">Nighttime</span>
-            </div>
-            <div class="text-center">
-                <div id="current-time" class="text-5xl md:text-6xl font-bold text-white time-glow tracking-tight">
-                    --:--:--
+    <main class="flex-1 ml-64 flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-dark-900/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
+            <div class="flex items-center justify-between h-16 px-6">
+                <!-- Tabs -->
+                <div class="flex items-center space-x-1">
+                    <button class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium">Overview</button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400">Analytics</button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400">Reports</button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400">History</button>
                 </div>
-                <div id="current-date" class="text-gray-400 mt-2 text-lg">
-                    Loading...
+                
+                <!-- Right side -->
+                <div class="flex items-center space-x-4">
+                    <!-- Time -->
+                    <div class="flex items-center space-x-3 text-sm text-gray-400">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-moon text-accent-purple"></i>
+                            <span id="header-time" class="font-mono">--:--:--</span>
+                        </div>
+                        <div class="w-px h-4 bg-white/10"></div>
+                        <div id="header-date" class="text-xs">Loading...</div>
+                    </div>
+                    
+                    <!-- Notifications -->
+                    <button class="relative w-10 h-10 rounded-xl bg-dark-800 hover:bg-dark-700 flex items-center justify-center transition border border-white/5">
+                        <i class="fas fa-bell text-gray-400"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-status-critical rounded-full status-dot"></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="flex-1 p-6 overflow-y-auto">
+            <div class="max-w-7xl mx-auto">
+                <!-- Dashboard Grid -->
+                <div id="loading" class="flex justify-center items-center py-20">
+                    <div class="loading-spinner"></div>
+                </div>
+
+                <div id="empty-state" class="hidden text-center py-20">
+                    <div class="w-20 h-20 rounded-2xl glass-card flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-cubes text-3xl text-gray-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-white mb-2">No modules yet</h2>
+                    <p class="text-gray-500 mb-6">Add your first module to get started</p>
+                    <button onclick="openAddModuleModal()" class="btn-primary text-white px-6 py-3 rounded-xl transition">
+                        <i class="fas fa-plus mr-2"></i>Add Your First Module
+                    </button>
+                </div>
+
+                <div id="dashboard-grid" class="dashboard-grid hidden">
+                    <!-- Time Widget -->
+                    <div class="glass-card rounded-2xl p-6 col-span-4 row-span-2 flex flex-col justify-center">
+                        <div class="flex items-center justify-center space-x-2 text-accent-purple mb-2">
+                            <i class="fas fa-moon text-sm"></i>
+                            <span class="text-xs font-medium uppercase tracking-wider">Nighttime</span>
+                        </div>
+                        <div class="text-center">
+                            <div id="current-time" class="text-4xl md:text-5xl font-bold text-white time-glow tracking-tight font-mono">
+                                --:--:--
+                            </div>
+                            <div id="current-date" class="text-gray-400 mt-2">
+                                Loading...
+                            </div>
+                            <div class="mt-4 flex justify-center space-x-6 text-xs text-gray-500">
+                                <div class="text-center">
+                                    <div class="text-accent-cyan font-semibold">NYC</div>
+                                    <div id="time-nyc">--:--</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-accent-purple font-semibold">LON</div>
+                                    <div id="time-lon">--:--</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-accent-pink font-semibold">TYO</div>
+                                    <div id="time-tyo">--:--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Status Widget -->
+                    <div class="glass-card rounded-2xl p-5 col-span-4 row-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl icon-badge flex items-center justify-center">
+                                    <i class="fas fa-server text-accent-purple"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-white">System Status</h3>
+                                    <p class="text-xs text-gray-500">Live monitoring</p>
+                                </div>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-full bg-status-online/20 text-status-online border border-status-online/30">
+                                <span class="w-1.5 h-1.5 rounded-full bg-status-online inline-block mr-1 status-dot"></span>
+                                Healthy
+                            </span>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-gray-400">CPU Usage</span>
+                                    <span class="text-white font-medium">42%</span>
+                                </div>
+                                <div class="h-2 bg-dark-700 rounded-full overflow-hidden">
+                                    <div class="h-full progress-bar-purple rounded-full" style="width: 42%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-gray-400">Memory</span>
+                                    <span class="text-white font-medium">68%</span>
+                                </div>
+                                <div class="h-2 bg-dark-700 rounded-full overflow-hidden">
+                                    <div class="h-full progress-bar-warning rounded-full" style="width: 68%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-gray-400">Disk</span>
+                                    <span class="text-white font-medium">23%</span>
+                                </div>
+                                <div class="h-2 bg-dark-700 rounded-full overflow-hidden">
+                                    <div class="h-full progress-bar rounded-full" style="width: 23%"></div>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-white/5 flex justify-between text-xs">
+                                <span class="text-gray-500">Uptime: 3d 12h 34m</span>
+                                <span class="text-status-online">Latency: 24ms</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Widget -->
+                    <div class="glass-card rounded-2xl p-5 col-span-4 row-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl icon-badge flex items-center justify-center">
+                                    <i class="fas fa-bell text-accent-purple"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-white">Alerts & Reminders</h3>
+                                    <p class="text-xs text-gray-500">2 active</p>
+                                </div>
+                            </div>
+                            <button class="text-xs text-accent-purple hover:text-accent-violet transition">
+                                View all
+                            </button>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3 p-3 bg-dark-800/50 rounded-xl border border-white/5">
+                                <div class="w-2 h-2 rounded-full bg-status-critical status-dot mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-white truncate">High CPU usage detected</div>
+                                    <div class="text-xs text-gray-500">Server-01 • 5 min ago</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3 p-3 bg-dark-800/50 rounded-xl border border-white/5">
+                                <div class="w-2 h-2 rounded-full bg-status-warning status-dot mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-white truncate">Memory usage above 80%</div>
+                                    <div class="text-xs text-gray-500">Database • 12 min ago</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3 p-3 bg-dark-800/50 rounded-xl border border-white/5 opacity-60">
+                                <div class="w-2 h-2 rounded-full bg-status-online mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-gray-400 truncate">Backup completed successfully</div>
+                                    <div class="text-xs text-gray-600">System • 1 hour ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modules will be rendered here -->
+                    <div id="modules-container" class="contents"></div>
                 </div>
             </div>
         </div>
-
-        <div id="loading" class="flex justify-center items-center py-20">
-            <div class="loading-spinner"></div>
-        </div>
-
-        <div id="empty-state" class="hidden text-center py-20">
-            <div class="w-20 h-20 rounded-2xl glass-card flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-cubes text-3xl text-gray-600"></i>
-            </div>
-            <h2 class="text-2xl font-semibold text-white mb-2">No modules yet</h2>
-            <p class="text-gray-500 mb-6">Add your first module to get started</p>
-            <button onclick="openAddModuleModal()" class="btn-primary text-white px-6 py-3 rounded-xl transition">
-                <i class="fas fa-plus mr-2"></i>Add Your First Module
-            </button>
-        </div>
-
-        <div id="modules-grid" class="grid-container hidden">
-            <!-- Modules will be rendered here -->
-        </div>
-    </div>
+    </main>
 
     <!-- Add Module Modal -->
     <div id="addModuleModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
@@ -251,12 +541,13 @@
             window.location.href = '/';
         }
 
-        // Update time widget
+        // Update time widgets
         function updateTime() {
             const now = new Date();
+            
+            // Main clock
             const timeEl = document.getElementById('current-time');
             const dateEl = document.getElementById('current-date');
-            
             if (timeEl) {
                 timeEl.textContent = now.toLocaleTimeString('en-US', { 
                     hour12: false, 
@@ -271,6 +562,53 @@
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
+                });
+            }
+            
+            // Header time
+            const headerTime = document.getElementById('header-time');
+            const headerDate = document.getElementById('header-date');
+            if (headerTime) {
+                headerTime.textContent = now.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                });
+            }
+            if (headerDate) {
+                headerDate.textContent = now.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric'
+                });
+            }
+            
+            // Timezones
+            const timeNyc = document.getElementById('time-nyc');
+            const timeLon = document.getElementById('time-lon');
+            const timeTyo = document.getElementById('time-tyo');
+            
+            if (timeNyc) {
+                timeNyc.textContent = now.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    timeZone: 'America/New_York'
+                });
+            }
+            if (timeLon) {
+                timeLon.textContent = now.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    timeZone: 'Europe/London'
+                });
+            }
+            if (timeTyo) {
+                timeTyo.textContent = now.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    timeZone: 'Asia/Tokyo'
                 });
             }
         }
@@ -311,15 +649,12 @@
             }
         }
 
-        // Render modules in grid
+        // Render modules
         function renderModules() {
             document.getElementById('loading').classList.add('hidden');
-            const grid = document.getElementById('modules-grid');
+            const grid = document.getElementById('dashboard-grid');
             const emptyState = document.getElementById('empty-state');
-            const timeWidget = document.getElementById('time-widget');
-
-            // Show time widget when dashboard loads
-            timeWidget.classList.remove('hidden');
+            const modulesContainer = document.getElementById('modules-container');
 
             if (modules.length === 0) {
                 emptyState.classList.remove('hidden');
@@ -330,17 +665,17 @@
             emptyState.classList.add('hidden');
             grid.classList.remove('hidden');
 
-            grid.innerHTML = modules.map((module, index) => `
-                <div class="glass-card rounded-2xl p-5 ${getGridClass(module.size || 'medium')} transition-all duration-300 hover:scale-[1.02]"
-                     style="grid-column: span ${getWidth(module)}; grid-row: span ${getHeight(module)};">
+            // Render dynamic modules in the container
+            modulesContainer.innerHTML = modules.map((module) => `
+                <div class="glass-card rounded-2xl p-5 ${getGridClass(module.size || 'medium')} transition-all duration-300 hover:scale-[1.02]" style="grid-column: span ${getWidth(module)};">
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center space-x-3">
-                            <div class="w-11 h-11 rounded-xl icon-badge flex items-center justify-center">
-                                <i class="fas ${getIcon(module.module_type)} text-accent-purple text-lg"></i>
+                            <div class="w-10 h-10 rounded-xl icon-badge flex items-center justify-center">
+                                <i class="fas ${getIcon(module.module_type)} text-accent-purple"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-white text-lg">${module.name}</h3>
-                                <p class="text-sm text-gray-500 capitalize flex items-center space-x-2">
+                                <h3 class="font-semibold text-white">${module.name}</h3>
+                                <p class="text-xs text-gray-500 capitalize flex items-center space-x-2">
                                     <span class="w-1.5 h-1.5 rounded-full bg-status-online status-dot"></span>
                                     <span>${module.module_type}</span>
                                 </p>
@@ -351,7 +686,7 @@
                         </button>
                     </div>
                     <div class="text-gray-300">
-                        ${getModulePreview(module)}
+                        ${getModuleContent(module)}
                     </div>
                 </div>
             `).join('');
@@ -359,21 +694,16 @@
 
         function getGridClass(size) {
             const classes = {
-                compact: 'col-span-12 md:col-span-6 lg:col-span-3',
-                medium: 'col-span-12 md:col-span-6',
-                expanded: 'col-span-12'
+                compact: 'col-span-3',
+                medium: 'col-span-4',
+                expanded: 'col-span-6'
             };
-            return classes[size] || 'col-span-12 md:col-span-6';
+            return classes[size] || 'col-span-4';
         }
 
         function getWidth(module) {
-            const widths = { compact: 3, medium: 6, expanded: 12 };
-            return widths[module.size] || 6;
-        }
-
-        function getHeight(module) {
-            const heights = { compact: 1, medium: 2, expanded: 3 };
-            return heights[module.size] || 2;
+            const widths = { compact: 3, medium: 4, expanded: 6 };
+            return widths[module.size] || 4;
         }
 
         function getIcon(type) {
@@ -385,13 +715,13 @@
             return icons[type] || 'fa-cube';
         }
 
-        function getModulePreview(module) {
-            const previews = {
+        function getModuleContent(module) {
+            const contents = {
                 portfolio: `
-                    <div class="space-y-4">
+                    <div class="space-y-3">
                         <div class="flex items-baseline space-x-2">
-                            <span class="text-3xl font-bold text-white">$0.00</span>
-                            <span class="text-sm text-status-online flex items-center">
+                            <span class="text-2xl font-bold text-white">$0.00</span>
+                            <span class="text-xs text-status-online flex items-center">
                                 <i class="fas fa-arrow-up mr-1"></i>0.00%
                             </span>
                         </div>
@@ -400,17 +730,26 @@
                                 <span>Portfolio Value</span>
                                 <span>0 assets</span>
                             </div>
-                            <div class="h-2 bg-dark-600 rounded-full overflow-hidden">
-                                <div class="h-full progress-bar rounded-full" style="width: 0%"></div>
+                            <div class="h-1.5 bg-dark-700 rounded-full overflow-hidden">
+                                <div class="h-full progress-bar-purple rounded-full" style="width: 0%"></div>
                             </div>
+                        </div>
+                        <div class="flex space-x-2 pt-1">
+                            <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-400">Stocks: 0</span>
+                            <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-400">Crypto: 0</span>
                         </div>
                     </div>
                 `,
                 calendar: `
                     <div class="space-y-3">
-                        <div class="flex items-center space-x-3 p-3 bg-dark-800/50 rounded-xl border border-white/5">
-                            <div class="w-2 h-2 rounded-full bg-status-info status-dot"></div>
-                            <span class="text-sm text-gray-300">No events today</span>
+                        <div class="flex items-center space-x-3 p-2.5 bg-dark-800/50 rounded-xl border border-white/5">
+                            <div class="w-8 h-8 rounded-lg bg-accent-purple/20 flex items-center justify-center">
+                                <i class="fas fa-calendar text-accent-purple text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-white truncate">No events today</div>
+                                <div class="text-xs text-gray-500">All caught up!</div>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between text-xs text-gray-500">
                             <span>Upcoming</span>
@@ -420,17 +759,23 @@
                 `,
                 log: `
                     <div class="space-y-3">
-                        <div class="flex items-center space-x-3 p-3 bg-dark-800/50 rounded-xl border border-white/5">
-                            <i class="fas fa-check-circle text-status-online"></i>
-                            <span class="text-sm text-gray-300">System operational</span>
+                        <div class="flex items-center space-x-3 p-2.5 bg-dark-800/50 rounded-xl border border-white/5">
+                            <div class="w-8 h-8 rounded-lg bg-status-online/20 flex items-center justify-center">
+                                <i class="fas fa-check text-status-online text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-white truncate">System operational</div>
+                                <div class="text-xs text-gray-500">All systems green</div>
+                            </div>
                         </div>
-                        <div class="text-xs text-gray-500">
-                            Last entry: <span class="text-gray-400">Never</span>
+                        <div class="text-xs text-gray-500 flex justify-between">
+                            <span>Last entry</span>
+                            <span class="text-gray-400">Never</span>
                         </div>
                     </div>
                 `
             };
-            return previews[module.module_type] || '<p class="text-gray-400">Module content</p>';
+            return contents[module.module_type] || '<p class="text-gray-400">Module content</p>';
         }
 
         // Modal functions
