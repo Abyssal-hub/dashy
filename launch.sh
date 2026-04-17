@@ -50,10 +50,19 @@ find_available_port() {
     local port=$start_port
     
     while [ $port -lt 65535 ]; do
-        if ! lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 && \
-           ! netstat -tuln 2>/dev/null | grep -q ":$port "; then
-            echo $port
-            return 0
+        # Prefer an actual bind test — more reliable than lsof/netstat,
+        # especially when Docker Desktop holds stale forwarding entries.
+        if command -v python3 &> /dev/null; then
+            if python3 -c "import socket, sys; s=socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('0.0.0.0',$port)); s.close(); sys.exit(0)" 2>/dev/null; then
+                echo $port
+                return 0
+            fi
+        else
+            if ! lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1 && \
+               ! netstat -tuln 2>/dev/null | grep -q ":$port "; then
+                echo $port
+                return 0
+            fi
         fi
         port=$((port + 1))
     done
@@ -72,7 +81,6 @@ check_and_assign_ports() {
     
     # Check and find available ports
     export POSTGRES_PORT=$(find_available_port $requested_postgres)
-    export REDIS_PORT=$(find_available_port $requested_redis)
     export BACKEND_PORT=$(find_available_port $requested_backend)
     
     # Show port assignments
@@ -81,9 +89,7 @@ check_and_assign_ports() {
     [ "$POSTGRES_PORT" != "$requested_postgres" ] && \
         echo "  PostgreSQL: $requested_postgres → ${GREEN}$POSTGRES_PORT${NC} (auto-assigned)" || \
         echo "  PostgreSQL: ${GREEN}$POSTGRES_PORT${NC}"
-    [ "$REDIS_PORT" != "$requested_redis" ] && \
-        echo "  Redis:      $requested_redis → ${GREEN}$REDIS_PORT${NC} (auto-assigned)" || \
-        echo "  Redis:      ${GREEN}$REDIS_PORT${NC}"
+    echo "  Redis:      ${GREEN}(internal only)${NC}"
     [ "$BACKEND_PORT" != "$requested_backend" ] && \
         echo "  Backend:    $requested_backend → ${GREEN}$BACKEND_PORT${NC} (auto-assigned)" || \
         echo "  Backend:    ${GREEN}$BACKEND_PORT${NC}"
@@ -93,12 +99,33 @@ check_and_assign_ports() {
 start_services() {
     print_banner
     check_docker
-    check_and_assign_ports
     
-    echo -e "${BLUE}Starting services...${NC}"
+    local compose_retries=3
+    local compose_attempt=1
     
-    # Build and start
-    docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up --build -d
+    while [ $compose_attempt -le $compose_retries ]; do
+        check_and_assign_ports
+        
+        echo -e "${BLUE}Starting services (attempt $compose_attempt/$compose_retries)...${NC}"
+        
+        # Build and start
+        if docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE up --build -d; then
+            break
+        fi
+        
+        if [ $compose_attempt -lt $compose_retries ]; then
+            echo -e "${YELLOW}⚠ Docker Compose startup failed. Retrying with different ports...${NC}"
+            docker-compose -p $PROJECT_NAME -f $COMPOSE_FILE down 2>/dev/null || true
+            # Bump start ports so the next scan skips current assignments
+            export POSTGRES_PORT=$((POSTGRES_PORT + 1))
+            export REDIS_PORT=$((REDIS_PORT + 1))
+            export BACKEND_PORT=$((BACKEND_PORT + 1))
+            compose_attempt=$((compose_attempt + 1))
+        else
+            echo -e "${RED}❌ Docker Compose failed to start after $compose_retries attempts${NC}"
+            return 1
+        fi
+    done
     
     echo ""
     echo -e "${BLUE}Waiting for services to be healthy...${NC}"

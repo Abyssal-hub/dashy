@@ -60,15 +60,25 @@ def create_app() -> FastAPI:
     if FRONTEND_DIR.exists():
         app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
         
-        # Serve index.html at root
+        # Serve index.html at root and /index.html
         @app.get("/")
         async def serve_index():
             from fastapi.responses import FileResponse
             return FileResponse(FRONTEND_DIR / "index.html")
-        
-        # Serve dashboard.html at /dashboard
+
+        @app.get("/index.html")
+        async def serve_index_html():
+            from fastapi.responses import FileResponse
+            return FileResponse(FRONTEND_DIR / "index.html")
+
+        # Serve dashboard.html at /dashboard and /dashboard.html
         @app.get("/dashboard")
         async def serve_dashboard():
+            from fastapi.responses import FileResponse
+            return FileResponse(FRONTEND_DIR / "dashboard.html")
+
+        @app.get("/dashboard.html")
+        async def serve_dashboard_html():
             from fastapi.responses import FileResponse
             return FileResponse(FRONTEND_DIR / "dashboard.html")
 
