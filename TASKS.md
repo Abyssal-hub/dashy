@@ -240,18 +240,23 @@
 **Notes:** Both endpoints implemented with type discriminator. Consumer in DEV-009 handles actual DB writes.
 
 ### DEV-009: Redis consumer (background task)
-**Status:** []
+**Status:** [DONE]
 **Priority:** P1
 **Assigned:** Developer
 **Source:** ARCHITECTURE.md Section 8.4
 **Deliverable:** Async consumer draining Redis queue
 **Acceptance Criteria:**
-- [ ] Consumer starts with FastAPI lifespan
-- [ ] BLPOP from `metrics_queue`
-- [ ] Batch accumulation (100 msg or 5s)
-- [ ] Bulk insert to TimescaleDB
-- [ ] Graceful shutdown on SIGTERM (finish current batch)
-- [ ] Error handling with retry
+- [x] Consumer starts with FastAPI lifespan (in `app/core/lifespan.py`)
+- [x] BLPOP from `metrics_queue`
+- [x] Batch accumulation: 100 messages OR 5s timeout (whichever comes first)
+- [x] Bulk insert to TimescaleDB `metrics` hypertable
+- [x] Bulk insert to `calendar_events` table (for scraped calendar events)
+- [x] Graceful shutdown on SIGTERM (finish current batch, 10s timeout)
+- [x] Error handling with retry (exponential backoff, 5 retries max)
+**Files Created/Modified:**
+- `backend/app/services/consumer.py` - New consumer service
+- `backend/app/core/lifespan.py` - Added consumer startup/shutdown
+**Notes:** Consumer runs as asyncio background task inside FastAPI lifespan (not separate process). Uses `asyncio.create_task()` with graceful cancellation. Batching strategy per ARCHITECTURE.md Section 8.2.
 
 ### DEV-010: Alert system foundation
 **Status:** []
