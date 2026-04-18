@@ -285,8 +285,8 @@
 - [ ] Uses RESEND_API_KEY from env
 
 ### DEV-012: Log Module handler
-**Status:** []
-**Priority:** P3
+**Status:** [IN_PROGRESS]
+**Priority:** P1 (promoted for QA visibility)
 **Assigned:** Developer
 **Source:** ARCHITECTURE.md Section 7.4, 11.2
 **Deliverable:** System log viewing
@@ -295,6 +295,7 @@
 - [ ] GET `/logs` endpoint with severity filtering
 - [ ] System logs written to database (7-day retention)
 - [ ] Log module displays recent logs with color-coded severity
+**Notes:** Prioritized to help QA debug and verify system behavior. Will be used by QA-REG-003.
 
 ### QA-REG-003: Regression check - Backend complete
 **Status:** []

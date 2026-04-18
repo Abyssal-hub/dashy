@@ -24,6 +24,8 @@ from app.schemas.ingest import (
 from app.services.redis_client import get_redis_client
 from app.services.auth.deps import get_current_user
 from app.models.user import User
+from app.modules.handlers.log import write_system_log
+from app.db.database import get_db_session
 
 
 router = APIRouter(prefix="/api/ingest", tags=["ingest"])
@@ -54,6 +56,7 @@ def serialize_datetime(obj: Any) -> str:
 async def ingest_metrics(
     request: MetricBatchRequest,
     current_user: User = Depends(get_current_user),
+    db_session = Depends(get_db_session),
 ) -> IngestResponse:
     """Queue batch of metrics for async processing.
     
@@ -96,6 +99,20 @@ async def ingest_metrics(
             },
         )
     
+    # Log successful ingest to system logs
+    await write_system_log(
+        db_session=db_session,
+        severity="INFO",
+        message=f"Metrics ingested: {queued} queued for user {current_user.id}",
+        source="ingest",
+        metadata={
+            "user_id": str(current_user.id),
+            "metrics_count": queued,
+            "errors_count": len(errors),
+            "queue": QUEUE_NAME,
+        },
+    )
+    
     return IngestResponse(
         status="accepted",
         message="Metrics queued for processing" + (f" ({len(errors)} failed)" if errors else ""),
@@ -119,6 +136,7 @@ async def ingest_metrics(
 async def ingest_events(
     request: EventBatchRequest,
     current_user: User = Depends(get_current_user),
+    db_session = Depends(get_db_session),
 ) -> IngestResponse:
     """Queue batch of calendar events for async processing.
     
@@ -187,6 +205,21 @@ async def ingest_events(
                 "errors": errors,
             },
         )
+    
+    # Log successful ingest to system logs
+    await write_system_log(
+        db_session=db_session,
+        severity="INFO",
+        message=f"Events ingested: {queued} queued for user {current_user.id}",
+        source="ingest",
+        metadata={
+            "user_id": str(current_user.id),
+            "events_count": queued,
+            "errors_count": len(errors),
+            "queue": QUEUE_NAME,
+            "module_id": str(module_id) if module_id else None,
+        },
+    )
     
     return IngestResponse(
         status="accepted",

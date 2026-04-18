@@ -17,6 +17,7 @@ from app.api import dashboard as dashboard_router
 from app.api import portfolio as portfolio_router
 from app.api import calendar as calendar_router
 from app.api import ingest as ingest_router
+from app.api import logs as logs_router
 
 
 # Path to frontend static files
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(portfolio_router.router, prefix="/api")
     app.include_router(calendar_router.router, prefix="/api")
     app.include_router(ingest_router.router, prefix="/api")
+    app.include_router(logs_router.router, prefix="/api")
 
     # Serve static files from frontend directory
     if FRONTEND_DIR.exists():

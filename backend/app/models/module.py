@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.portfolio import Asset
     from app.models.calendar import CalendarEvent
+    from app.models.log import SystemLog
 
 
 class Module(Base):
@@ -63,6 +64,7 @@ class Module(Base):
     user = relationship("User", back_populates="modules")
     assets = relationship("Asset", back_populates="module", cascade="all, delete-orphan")
     calendar_events = relationship("CalendarEvent", back_populates="module", cascade="all, delete-orphan")
+    system_logs = relationship("SystemLog", back_populates="module")
     
     def __repr__(self) -> str:
         return f"<Module(id={self.id}, type={self.module_type}, name={self.name})>"
