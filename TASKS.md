@@ -225,7 +225,7 @@
 **Gate:** CLEARED for DEV-008
 
 ### DEV-008: Data ingestion endpoints
-**Status:** []
+**Status:** [IN_PROGRESS]
 **Priority:** P1
 **Assigned:** Developer
 **Source:** ARCHITECTURE.md Section 8
