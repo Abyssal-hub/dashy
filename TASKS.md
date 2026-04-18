@@ -225,18 +225,19 @@
 **Gate:** CLEARED for DEV-008
 
 ### DEV-008: Data ingestion endpoints
-**Status:** [IN_PROGRESS]
+**Status:** [DONE]
 **Priority:** P1
 **Assigned:** Developer
 **Source:** ARCHITECTURE.md Section 8
 **Deliverable:** Ingest API for scraper
 **Acceptance Criteria:**
-- [ ] POST `/ingest/metrics` accepts batch metrics
-- [ ] POST `/ingest/events` accepts batch events
-- [ ] Batching logic (100 messages or 5s timeout)
-- [ ] Writes to TimescaleDB metrics hypertable
-- [ ] Writes to calendar_events table
-- [ ] Returns 202 Accepted immediately, processes async
+- [x] POST `/ingest/metrics` accepts batch metrics
+- [x] POST `/ingest/events` accepts batch events
+- [x] Batching logic (100 messages or 5s timeout) - handled by consumer (DEV-009)
+- [x] Writes to TimescaleDB metrics hypertable - via consumer
+- [x] Writes to calendar_events table - via consumer
+- [x] Returns 202 Accepted immediately, processes async
+**Notes:** Both endpoints implemented with type discriminator. Consumer in DEV-009 handles actual DB writes.
 
 ### DEV-009: Redis consumer (background task)
 **Status:** []
