@@ -618,17 +618,30 @@
 - [~] Tests pass when DEV-002 is implemented (some auth tests pass, API fixes needed)
 
 ### QA-003: Backend API tests - Module CRUD
-**Status:** []
+**Status:** [DONE]
 **Priority:** P1
-**Assigned:** QA
+**Assigned:** QA (completed)
 **Depends:** DEV-004
 **Deliverable:** Module endpoint tests
 **Acceptance Criteria:**
-- [ ] Test: Create module with valid data
-- [ ] Test: Create module with invalid type fails
-- [ ] Test: List modules returns only user's modules
-- [ ] Test: Update module settings persists
-- [ ] Test: Delete module removes from dashboard too
+- [x] Test: Create module with valid data succeeds
+- [x] Test: Create module with invalid type fails (422)
+- [x] Test: Create module without auth fails (401/403)
+- [x] Test: Create module with missing name fails (422)
+- [x] Test: List modules returns only user's modules
+- [x] Test: List modules empty for new user
+- [x] Test: Update module settings persists correctly
+- [x] Test: Update non-existent module fails (404)
+- [x] Test: Cannot update another user's module
+- [x] Test: Delete module removes from dashboard
+- [x] Test: Delete non-existent module fails (404)
+- [x] Test: Cannot delete another user's module
+- [x] Test: Get module returns full details
+- [x] Test: All module types work (portfolio, calendar, log)
+- [x] Test: Module position stored correctly
+**Files Created:**
+- `backend/tests/test_modules_api.py` - 21 comprehensive tests
+**Notes:** All 21 tests passing. Validates CRUD operations, auth isolation, and module type support.
 
 ### QA-004: Integration test - Data pipeline
 **Status:** []
