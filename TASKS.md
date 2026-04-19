@@ -285,17 +285,26 @@
 - [ ] Uses RESEND_API_KEY from env
 
 ### DEV-012: Log Module handler
-**Status:** [IN_PROGRESS]
+**Status:** [DONE]
 **Priority:** P1 (promoted for QA visibility)
-**Assigned:** Developer
+**Assigned:** Developer (completed)
 **Source:** ARCHITECTURE.md Section 7.4, 11.2
 **Deliverable:** System log viewing
 **Acceptance Criteria:**
-- [ ] LogHandler implements get_data()
-- [ ] GET `/logs` endpoint with severity filtering
-- [ ] System logs written to database (7-day retention)
-- [ ] Log module displays recent logs with color-coded severity
-**Notes:** Prioritized to help QA debug and verify system behavior. Will be used by QA-REG-003.
+- [x] LogHandler implements get_data()
+- [x] GET `/logs` endpoint with severity filtering
+- [x] System logs written to database (7-day retention)
+- [x] Log module displays recent logs with color-coded severity
+- [x] Consumer logs start/stop and errors to system_logs table
+- [x] Ingest API logs metrics/events ingestion
+**Files Created/Modified:**
+- `backend/app/models/log.py` - SystemLog model
+- `backend/app/api/logs.py` - REST endpoints for log querying
+- `backend/app/modules/handlers/log.py` - LogHandler + write_system_log()
+- `backend/alembic/versions/006_add_system_logs.py` - Database migration
+- `backend/app/services/consumer.py` - Added system logging integration
+- `backend/app/api/ingest.py` - Already using write_system_log()
+**Notes:** Log module is production-ready. QA can now view system logs to debug issues during QA-REG-003. All critical system events (consumer start/stop, batch failures, ingest operations) are logged.
 
 ### QA-REG-003: Regression check - Backend complete
 **Status:** []

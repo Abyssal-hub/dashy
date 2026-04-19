@@ -17,7 +17,8 @@ from typing import Any, TypeVar
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.database import engine, async_session_maker
+from app.modules.handlers.log import write_system_log
+from app.db.database import async_session_maker
 from app.services.redis_client import get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -89,6 +90,20 @@ class RedisConsumer:
         self._shutdown_event.clear()
         self._task = asyncio.create_task(self._consume_loop())
         logger.info("Redis consumer started")
+        
+        # Write system log for consumer start
+        try:
+            async with async_session_maker() as session:
+                await write_system_log(
+                    db_session=session,
+                    severity="INFO",
+                    message="Redis consumer started",
+                    source="consumer",
+                    metadata={"queue": QUEUE_NAME, "batch_size": BATCH_SIZE},
+                )
+        except Exception:
+            # Don't fail startup if logging fails
+            logger.warning("Failed to write system log for consumer start")
     
     async def stop(self) -> None:
         """Gracefully stop the consumer.
@@ -121,6 +136,20 @@ class RedisConsumer:
             await self._flush_batch(self._accumulator.clear())
         
         logger.info("Redis consumer stopped")
+        
+        # Write system log for consumer stop
+        try:
+            async with async_session_maker() as session:
+                await write_system_log(
+                    db_session=session,
+                    severity="INFO",
+                    message="Redis consumer stopped gracefully",
+                    source="consumer",
+                    metadata={"queue": QUEUE_NAME},
+                )
+        except Exception:
+            # Don't fail shutdown if logging fails
+            logger.warning("Failed to write system log for consumer stop")
     
     async def _consume_loop(self) -> None:
         """Main consumption loop with BLPOP and batching."""
@@ -209,7 +238,23 @@ class RedisConsumer:
                         f"{operation_name} failed after {MAX_RETRIES} attempts. "
                         f"Dropping {len(data)} records. Error: {e}"
                     )
-                    # TODO: Could write to a dead-letter queue here
+                    # Write system log for permanent failure
+                    try:
+                        async with async_session_maker() as session:
+                            await write_system_log(
+                                db_session=session,
+                                severity="ERROR",
+                                message=f"{operation_name} failed permanently after {MAX_RETRIES} retries",
+                                source="consumer",
+                                metadata={
+                                    "operation": operation_name,
+                                    "records_dropped": len(data),
+                                    "error": str(e),
+                                    "queue": QUEUE_NAME,
+                                },
+                            )
+                    except Exception:
+                        logger.warning("Failed to write system log for consumer error")
                     return
                 
                 logger.warning(
