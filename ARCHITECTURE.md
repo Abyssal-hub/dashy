@@ -564,9 +564,64 @@ ENVIRONMENT=local
 - For VPS: migrate to Docker Secrets or a vault (HashiCorp Vault, AWS Secrets Manager)
 
 ### 11.2 Logging Strategy
+
+#### 11.2.1 Backend Logging
 - **Backend:** Structured JSON logs to stdout
 - **Log Module:** Critical logs also written to `system_logs` table (7-day retention)
 - **Docker:** stdout/stderr captured by Docker daemon (`docker logs`)
+
+#### 11.2.2 Frontend Interaction Logging (DEV-013)
+**Requirement:** Log every start and end of user interaction on the UI for debugging.
+
+**Interaction Types Tracked:**
+| Type | Description | Example |
+|------|-------------|---------|
+| `click` | User clicks on UI elements | Button click, link click |
+| `hover` | Mouse hover over elements | Tooltip trigger, preview |
+| `scroll` | Page/element scroll events | Infinite scroll, anchor |
+| `input` | Form input interactions | Text entry, selection |
+| `navigation` | Route/page changes | Page load, router push |
+| `api_call` | API request/response | Data fetch, mutation |
+
+**Log Schema:**
+```typescript
+interface InteractionLog {
+  interactionId: string;      // UUID for correlation
+  userId: string;             // Authenticated user
+  sessionId: string;          // Browser session
+  type: InteractionType;      // One of above types
+  target: {
+    element: string;          // DOM element identifier
+    component: string;        // React component name
+    route: string;            // Current page route
+  };
+  metadata?: Record<string, any>; // Additional context
+  startedAt: ISO8601;         // Interaction start
+  endedAt?: ISO8601;          // Interaction end
+  duration?: number;          // Duration in milliseconds
+  success: boolean;           // Success/failure status
+  error?: string;             // Error message if failed
+}
+```
+
+**Implementation:**
+- **Frontend Service:** `lib/logger.ts` - InteractionLogger class
+- **React Integration:** `useInteraction()` hook for manual tracking
+- **Auto Tracking:** HOC `withInteractionTracking()` for component-level
+- **API Endpoint:** `POST /api/logs/interaction` - 202 Accepted
+- **Backend Storage:** Write to `system_logs` with source="frontend"
+- **Log Level Logic:**
+  - `ERROR` - Failed interactions (success=false)
+  - `WARN` - Slow interactions (>5000ms duration)
+  - `INFO` - Normal interactions (<5000ms)
+
+**Use Cases:**
+1. **Bug reproduction:** See exact user steps leading to errors
+2. **Performance monitoring:** Identify slow interactions
+3. **Usage analytics:** Track feature usage patterns
+4. **Error context:** Link failed API calls to triggering UI actions
+
+**Retention:** 7 days (same as system logs per Section 7.4)
 - **Levels:** DEBUG (development), INFO (normal operations), WARN (degradation), ERROR (failures)
 
 ### 11.3 Health Monitoring

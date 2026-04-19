@@ -347,6 +347,45 @@
 - [ ] Extracts: title, time, currency, impact level
 - [ ] Deduplicates via external_id
 - [ ] Pushes to Redis queue every 1 hour
+
+### DEV-015: Frontend interaction logging
+**Status:** [IN_PROGRESS]
+**Priority:** P1
+**Assigned:** Developer
+**Source:** ARCHITECTURE.md Section 11.2.2
+**Deliverable:** Frontend logging system for UI interaction tracking
+**Acceptance Criteria:**
+- [ ] Frontend service: `frontend/lib/logger.ts` - InteractionLogger class
+- [ ] React hook: `useInteraction()` for manual tracking
+- [ ] HOC: `withInteractionTracking()` for automatic component tracking
+- [ ] Backend endpoint: `POST /api/logs/interaction` - 202 Accepted
+- [ ] Log schema: interactionId, userId, sessionId, type, target, duration, success
+- [ ] Auto log level assignment: ERROR (failed), WARN (slow >5000ms), INFO (normal)
+- [ ] Source="frontend" in system_logs table
+- [ ] Interactions tracked: click, hover, scroll, input, navigation, api_call
+- [ ] Keepalive fetch for delivery on page unload
+**Files to Create/Modify:**
+- `frontend/lib/logger.ts` - New frontend logging service
+- `frontend/hooks/useInteraction.ts` - React hook
+- `frontend/components/withInteractionTracking.tsx` - HOC wrapper
+- `backend/app/api/logs.py` - Add interaction endpoint
+- `backend/app/schemas/interaction.py` - Pydantic schemas
+
+### QA-013: Frontend interaction logging validation
+**Status:** []
+**Priority:** P1
+**Assigned:** QA
+**Depends:** DEV-015
+**Deliverable:** Test suite validates frontend logging
+**Acceptance Criteria:**
+- [ ] Test frontend logger service (InteractionLogger class)
+- [ ] Test useInteraction hook behavior
+- [ ] Test interaction API endpoint
+- [ ] Test log level assignment (ERROR/WARN/INFO)
+- [ ] Test duration calculation accuracy
+- [ ] Test failed interaction error capture
+- [ ] Verify interaction logs appear in system_logs with source="frontend"
+- [ ] End-to-end test: simulate interaction → verify logged
 - [ ] Graceful handling of HTML changes (log error, don't crash)
 
 ### DEV-015: Integration - Kimi Professional Data

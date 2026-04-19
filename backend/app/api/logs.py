@@ -12,6 +12,7 @@ from app.services.auth.deps import get_current_user
 from app.models.log import SystemLog
 from app.models.module import Module
 from app.modules.handlers.log import LogHandler, write_system_log
+from app.schemas.interaction import InteractionLogCreate, InteractionLogResponse
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
@@ -186,6 +187,71 @@ async def get_severity_counts(
         "counts": counts,
         "total": sum(counts.values()),
     }
+
+
+@router.post(
+    "/interaction",
+    response_model=InteractionLogResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Log frontend interaction",
+    description="Log a user interaction event from the frontend UI for debugging and analytics.",
+)
+async def log_interaction(
+    log: InteractionLogCreate,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    """Log a frontend interaction event.
+    
+    Accepts interaction logs from the frontend UI, assigns appropriate severity
+    based on outcome and duration, and stores in system_logs table.
+    
+    Severity Assignment:
+    - ERROR: Failed interaction (success=false)
+    - WARN: Slow interaction (duration > 5000ms)
+    - INFO: Normal interaction (< 5000ms, success=true)
+    """
+    from app.schemas.interaction import InteractionLogResponse
+    
+    # Determine severity based on outcome and duration
+    if not log.success:
+        severity = "ERROR"
+    elif log.duration and log.duration > 5000:
+        severity = "WARN"
+    else:
+        severity = "INFO"
+    
+    # Build message
+    message = f"UI {log.type}: {log.target.element} in {log.target.component}"
+    if log.duration:
+        message += f" - {log.duration}ms"
+    if log.error:
+        message += f" - Error: {log.error}"
+    
+    # Write to system logs
+    await write_system_log(
+        db_session=db_session,
+        severity=severity,
+        message=message,
+        source="frontend",
+        module_id=None,
+        metadata={
+            "interaction_id": log.interactionId,
+            "session_id": log.sessionId,
+            "user_id": log.userId,
+            "type": log.type,
+            "target": log.target.model_dump(),
+            "duration_ms": log.duration,
+            "success": log.success,
+            "error": log.error,
+            "metadata": log.metadata,
+        },
+    )
+    
+    return InteractionLogResponse(
+        status="logged",
+        message="Interaction logged successfully",
+        interactionId=log.interactionId,
+    )
 
 
 def _get_severity_color(severity: str) -> str:
