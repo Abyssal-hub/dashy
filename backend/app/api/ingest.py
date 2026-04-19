@@ -23,7 +23,6 @@ from app.schemas.ingest import (
 )
 from app.services.redis_client import get_redis_client
 from app.services.auth.deps import get_current_user
-from app.models.user import User
 from app.modules.handlers.log import write_system_log
 from app.db.database import get_db_session
 
@@ -55,7 +54,7 @@ def serialize_datetime(obj: Any) -> str:
 )
 async def ingest_metrics(
     request: MetricBatchRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: str = Depends(get_current_user),
     db_session = Depends(get_db_session),
 ) -> IngestResponse:
     """Queue batch of metrics for async processing.
@@ -79,7 +78,7 @@ async def ingest_metrics(
                 "timestamp": metric.timestamp.isoformat(),
                 "tags": metric.tags,
                 "source": metric.source,
-                "user_id": str(current_user.id),
+                "user_id": current_user,
             }
             
             # Push to Redis queue (LPUSH for producer)
@@ -103,10 +102,10 @@ async def ingest_metrics(
     await write_system_log(
         db_session=db_session,
         severity="INFO",
-        message=f"Metrics ingested: {queued} queued for user {current_user.id}",
+        message=f"Metrics ingested: {queued} queued for user {current_user}",
         source="ingest",
         metadata={
-            "user_id": str(current_user.id),
+            "user_id": current_user,
             "metrics_count": queued,
             "errors_count": len(errors),
             "queue": QUEUE_NAME,
@@ -135,7 +134,7 @@ async def ingest_metrics(
 )
 async def ingest_events(
     request: EventBatchRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: str = Depends(get_current_user),
     db_session = Depends(get_db_session),
 ) -> IngestResponse:
     """Queue batch of calendar events for async processing.
@@ -162,7 +161,7 @@ async def ingest_events(
                 "is_all_day": event.is_all_day,
                 "event_type": event.event_type,
                 "source": event.source,
-                "user_id": str(current_user.id),
+                "user_id": current_user,
             }
             
             # Optional fields - only include if not None
@@ -210,10 +209,10 @@ async def ingest_events(
     await write_system_log(
         db_session=db_session,
         severity="INFO",
-        message=f"Events ingested: {queued} queued for user {current_user.id}",
+        message=f"Events ingested: {queued} queued for user {current_user}",
         source="ingest",
         metadata={
-            "user_id": str(current_user.id),
+            "user_id": current_user,
             "events_count": queued,
             "errors_count": len(errors),
             "queue": QUEUE_NAME,

@@ -66,7 +66,7 @@ async def client(db_engine, redis_container):
         async with async_session() as session:
             yield session
     
-    # Override Redis dependency
+    # Override Redis dependency and global client
     redis_host = redis_container.get_container_host_ip()
     redis_port = redis_container.get_exposed_port(6379)
     redis_url = f"redis://{redis_host}:{redis_port}/0"
@@ -75,6 +75,11 @@ async def client(db_engine, redis_container):
     
     def override_get_redis():
         return test_redis
+    
+    # Patch the module-level _redis_client for direct function calls
+    import app.services.redis_client as redis_module
+    original_client = redis_module._redis_client
+    redis_module._redis_client = test_redis
     
     app.dependency_overrides[get_db_session] = override_get_db
     app.dependency_overrides[get_redis_client] = override_get_redis
@@ -85,4 +90,6 @@ async def client(db_engine, redis_container):
         yield ac
     
     await test_redis.aclose()
+    # Restore original redis client
+    redis_module._redis_client = original_client
     app.dependency_overrides.clear()

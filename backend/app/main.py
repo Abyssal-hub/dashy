@@ -57,7 +57,8 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router.router, prefix="/api")
     app.include_router(portfolio_router.router, prefix="/api")
     app.include_router(calendar_router.router, prefix="/api")
-    app.include_router(ingest_router.router, prefix="/api")
+    # ingest_router.router already has /api/ingest prefix
+    app.include_router(ingest_router.router)
     app.include_router(logs_router.router, prefix="/api")
 
     # Serve static files from frontend directory
