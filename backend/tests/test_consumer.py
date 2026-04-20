@@ -270,6 +270,7 @@ class TestConsumerRetry:
 class TestConsumerIntegration:
     """Integration tests with real Redis and database."""
 
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_consumer_processes_message_from_queue(self, client, db_session, redis_container):
         """DEV-009-017: Consumer processes real message from Redis queue.

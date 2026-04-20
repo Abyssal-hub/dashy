@@ -194,12 +194,14 @@ class TestCircuitBreaker:
 class TestDataFlow:
     """Test end-to-end data flow."""
 
+    @pytest.mark.e2e
     @pytest.mark.skip(reason="Requires running consumer - full integration")
     @pytest.mark.asyncio
     async def test_end_to_end_metrics_pipeline(self, client, db_session):
         """QA-004-011: Full pipeline: ingest → Redis → consumer → DB."""
         pass
 
+    @pytest.mark.e2e
     @pytest.mark.skip(reason="Requires running consumer - full integration")
     @pytest.mark.asyncio
     async def test_end_to_end_events_pipeline(self, client, db_session):

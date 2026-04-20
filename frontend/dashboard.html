@@ -651,15 +651,31 @@
         async function loadModules() {
             try {
                 const response = await api('/modules');
-                if (!response) return;
+                if (!response) {
+                    // 401 handled by api() -> logout, show empty state for other auth issues
+                    showEmptyState();
+                    return;
+                }
+
+                if (!response.ok) {
+                    console.error('API error:', response.status, await response.text());
+                    showEmptyState();
+                    return;
+                }
 
                 const data = await response.json();
                 modules = data.modules || [];
                 renderModules();
             } catch (err) {
                 console.error('Failed to load modules:', err);
-                showError('Failed to load modules');
+                showEmptyState();
             }
+        }
+
+        function showEmptyState() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('dashboard-grid').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
         }
 
         // Render modules

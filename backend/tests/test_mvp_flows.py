@@ -12,6 +12,7 @@ from app.services.auth.service import create_user, create_access_token
 class TestFlow1FirstTimeUserOnboarding:
     """Flow 1: First-time user registers, logs in, sees empty dashboard"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_new_user_sees_empty_dashboard(self, client, db_session):
         """Step 1.1-1.7: New user onboarding flow
@@ -49,6 +50,7 @@ class TestFlow1FirstTimeUserOnboarding:
 class TestFlow2AddFirstPortfolioModule:
     """Flow 2: User adds a portfolio module"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_add_portfolio_module_flow(self, client, db_session):
         """Step 2.1-2.6: Add portfolio module"""
@@ -91,6 +93,7 @@ class TestFlow2AddFirstPortfolioModule:
 class TestFlow3SessionPersistence:
     """Flow 3: User returns and finds dashboard intact"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_dashboard_persists_across_sessions(self, client, db_session):
         """Step 3.1-3.7: Session persistence"""
@@ -144,6 +147,7 @@ class TestFlow3SessionPersistence:
 class TestFlow4DeleteModule:
     """Flow 4: User removes a module"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_delete_module_flow(self, client, db_session):
         """Step 4.1-4.5: Delete module flow"""
@@ -189,6 +193,7 @@ class TestFlow4DeleteModule:
 class TestFlow5AddMultipleModuleTypes:
     """Flow 5: User creates diverse dashboard"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_add_multiple_module_types(self, client, db_session):
         """Step 5.1-5.5: Add portfolio, calendar, and log modules"""
@@ -235,6 +240,7 @@ class TestFlow5AddMultipleModuleTypes:
 class TestFlow6LogoutAndRelogin:
     """Flow 6: User logout and re-login"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_logout_and_relogin_flow(self, client, db_session):
         """Step 6.1-6.5: Logout clears session, re-login works"""
@@ -286,6 +292,7 @@ class TestFlow6LogoutAndRelogin:
 class TestFlow7ErrorHandling:
     """Flow 7: Error handling scenarios"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_invalid_login_error(self, client, db_session):
         """Scenario 7a: Invalid login shows error"""
@@ -338,6 +345,7 @@ class TestFlow7ErrorHandling:
 class TestMVPAPIContract:
     """Verify API response schemas match MVP contract"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_get_modules_response_schema(self, client, db_session):
         """Verify GET /api/modules returns correct schema"""
@@ -374,6 +382,7 @@ class TestMVPAPIContract:
         assert module["size"] == "medium"
         assert module["is_active"] is True
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_post_modules_response_schema(self, client, db_session):
         """Verify POST /api/modules returns correct schema"""
@@ -397,6 +406,7 @@ class TestMVPAPIContract:
         assert data["module_type"] == "calendar"
         assert data["name"] == "My Calendar"
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_error_response_schema(self, client):
         """Verify error responses include detail field"""
@@ -410,6 +420,7 @@ class TestMVPAPIContract:
 class TestMVPLimitations:
     """Test known MVP limitations are documented"""
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_registration_via_service_only(self, client, db_session):
         """Registration UI not implemented - use service directly"""
@@ -424,6 +435,7 @@ class TestMVPLimitations:
         })
         assert login_response.status_code == 200
     
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_module_data_placeholder(self, client, db_session):
         """MVP shows placeholder data, not real values"""

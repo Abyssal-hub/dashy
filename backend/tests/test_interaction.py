@@ -550,6 +550,7 @@ class TestInteractionSchemas:
 class TestInteractionIntegration:
     """Integration tests for frontend interaction logging."""
 
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_end_to_end_interaction_logging(self, client, db_session):
         """QA-013-016: End-to-end: Log interaction and verify it appears in query."""
@@ -594,6 +595,7 @@ class TestInteractionIntegration:
         log_messages = [log["message"] for log in data.get("logs", [])]
         assert any("navigation" in msg for msg in log_messages)
 
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_interaction_severity_filtering(self, client, db_session):
         """QA-013-017: Interaction logs can be filtered by severity."""
@@ -627,6 +629,7 @@ class TestInteractionIntegration:
         for log in data.get("logs", []):
             assert log["severity"] == "ERROR"
 
+    @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_multiple_interactions_same_session(self, client, db_session):
         """QA-013-018: Multiple interactions in same session are tracked separately."""

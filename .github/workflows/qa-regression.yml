@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests (exclude launch tests)
+      - name: Run tests (exclude E2E and launch tests)
         working-directory: ./backend
         env:
           SECRET_KEY: ci-test-secret-key
@@ -37,8 +37,8 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES: 15
           REFRESH_TOKEN_EXPIRE_DAYS: 7
         run: |
-          # Exclude launch script tests (require Docker Compose)
-          pytest tests/ -v --tb=short --ignore=tests/test_launch_script.py --ignore=tests/test_launch_stack.py
+          # Exclude E2E tests (run in separate job) and launch script tests (require Docker Compose)
+          pytest tests/ -v --tb=short -m "not e2e" --ignore=tests/test_launch_script.py --ignore=tests/test_launch_stack.py
 
   docker-build:
     runs-on: ubuntu-latest

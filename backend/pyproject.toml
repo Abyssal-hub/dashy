@@ -3,6 +3,10 @@ testpaths = ["tests", "e2e"]
 asyncio_mode = "auto"
 pythonpath = ["."]
 addopts = "-v --tb=short"
+markers = [
+    "e2e: End-to-end integration tests (slower, run separately)",
+    "slow: Slow tests that should run in a separate job",
+]
 
 [tool.pyright]
 include = ["app", "tests"]
