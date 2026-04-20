@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Literal, Any
 from uuid import uuid4
 
-# Default log directory
-LOG_DIR = Path(os.getenv("LOG_DIR", "/var/log/dashboard"))
-LOG_DIR.mkdir(parents=True, exist_ok=True)
+# Default log directory - use project-local path for CI compatibility
+# Override with LOG_DIR env var if needed
+LOG_DIR = Path(os.getenv("LOG_DIR", "./logs"))
 
 # Log files
 APP_LOG_FILE = LOG_DIR / "app.log"
@@ -25,7 +25,7 @@ RETENTION_DAYS = 7
 
 
 def _ensure_log_dir():
-    """Ensure log directory exists."""
+    """Ensure log directory exists (called before writing, not at import)."""
     global LOG_DIR, APP_LOG_FILE, INTERACTION_LOG_FILE, ERROR_LOG_FILE
     # Ensure LOG_DIR is a Path object
     if isinstance(LOG_DIR, str):
