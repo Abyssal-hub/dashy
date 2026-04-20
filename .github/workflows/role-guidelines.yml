@@ -1,0 +1,268 @@
+name: Role Guidelines
+
+# Abyssal Droid Agent - Role Guidelines Reference
+# Use this workflow to display the checklist and guidelines for a specific role.
+# Trigger before starting work in a new role to ensure compliance.
+
+on:
+  workflow_dispatch:
+    inputs:
+      role:
+        description: 'Role to display guidelines for (architect, developer, qa, ui_designer, all)'
+        required: true
+        type: string
+        default: 'all'
+      task_id:
+        description: 'Optional: Task ID context (e.g., DEV-004)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  role-guidelines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display Role Guidelines
+        env:
+          ROLE: ${{ inputs.role }}
+          TASK_ID: ${{ inputs.task_id }}
+        run: |
+          echo "╔══════════════════════════════════════════════════════════════════════╗"
+          echo "║         ABYSSAL DROID AGENT - ROLE GUIDELINES                        ║"
+          echo "╚══════════════════════════════════════════════════════════════════════╝"
+          echo ""
+          if [ -n "$TASK_ID" ]; then
+            echo "Task Context: $TASK_ID"
+            echo ""
+          fi
+
+          # ──────────────────────────────────────────────────────────────
+          # ARCHITECT ROLE
+          # ──────────────────────────────────────────────────────────────
+          show_architect() {
+            echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+            echo "┃  ROLE: ARCHITECT (Lead)                                            ┃"
+            echo "┃  When: Task planning, architecture design, specification conflicts   ┃"
+            echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+            echo ""
+            echo "📋 RESPONSIBILITIES:"
+            echo "   • Define technical architecture in ARCHITECTURE.md"
+            echo "   • Assign tasks and manage workflow via TASKS.md"
+            echo "   • Review structural code changes (NOT line-by-line)"
+            echo "   • Resolve specification conflicts"
+            echo "   • Own DECISIONS.md and TASKS.md"
+            echo "   • Decide when to switch to Developer role"
+            echo ""
+            echo "✅ START-OF-ROLE CHECKLIST:"
+            echo "   [ ] Review TASKS.md for current backlog status"
+            echo "   [ ] Ensure ARCHITECTURE.md is up to date"
+            echo "   [ ] Identify task dependencies and blockers"
+            echo ""
+            echo "✅ END-OF-ROLE CHECKLIST (before switching to Developer):"
+            echo "   [ ] Clear deliverable defined in TASKS.md"
+            echo "   [ ] Acceptance criteria listed"
+            echo "   [ ] No unresolved dependencies"
+            echo "   [ ] Estimated effort documented"
+            echo "   [ ] Section of ARCHITECTURE.md referenced"
+            echo "   [ ] Task status updated to ASSIGNED"
+            echo ""
+            echo "✅ REVIEW CHECKLIST (when receiving work from QA):"
+            echo "   [ ] Does the API match the spec in ARCHITECTURE.md?"
+            echo "   [ ] Are database schema changes approved and documented?"
+            echo "   [ ] Does the module follow the handler registry pattern?"
+            echo "   [ ] Are external APIs wrapped with circuit breaker logic?"
+            echo "   [ ] Are secrets properly externalized (not hardcoded)?"
+            echo "   [ ] Is logging implemented per Section 11.2?"
+            echo ""
+            echo "⏱️  TIMEBOX: 15 minutes per structural review"
+            echo ""
+            echo "🔄 NEXT ROLE: Developer (to implement) or QA (if skipping dev)"
+            echo ""
+          }
+
+          # ──────────────────────────────────────────────────────────────
+          # DEVELOPER ROLE
+          # ──────────────────────────────────────────────────────────────
+          show_developer() {
+            echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+            echo "┃  ROLE: DEVELOPER                                                   ┃"
+            echo "┃  When: Implementation, coding, writing unit tests                  ┃"
+            echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+            echo ""
+            echo "📋 RESPONSIBILITIES:"
+            echo "   • Implement features per ARCHITECTURE.md spec"
+            echo "   • Write unit tests for implemented code"
+            echo "   • CANNOT modify tests - tests are the specification"
+            echo "   • Report blockers to Architect (self-report, switch role)"
+            echo "   • Commit and push per milestone"
+            echo ""
+            echo "✅ START-OF-ROLE CHECKLIST:"
+            echo "   [ ] Task status moved to IN_PROGRESS in TASKS.md"
+            echo "   [ ] Relevant section of ARCHITECTURE.md reviewed"
+            echo "   [ ] Acceptance criteria understood"
+            echo "   [ ] No unresolved blockers"
+            echo ""
+            echo "✅ DURING DEVELOPMENT:"
+            echo "   [ ] Code follows existing patterns in codebase"
+            echo "   [ ] Type hints used throughout"
+            echo "   [ ] Error handling implemented (no bare except)"
+            echo "   [ ] Logging added per Section 11.2"
+            echo "   [ ] Unit tests written alongside code"
+            echo "   [ ] No test modifications (tests are spec)"
+            echo ""
+            echo "✅ END-OF-ROLE CHECKLIST (before switching to QA):"
+            echo "   [ ] All acceptance criteria implemented"
+            echo "   [ ] Unit tests pass locally"
+            echo "   [ ] Code committed with descriptive message"
+            echo "   [ ] No TODOs or FIXMEs left (or documented)"
+            echo "   [ ] Task status moved to IN_REVIEW"
+            echo ""
+            echo "🚫 NEVER:"
+            echo "   • Modify tests to make code pass"
+            echo "   • Commit secrets or hardcoded credentials"
+            echo "   • Skip error handling for 'happy path only'"
+            echo "   • Ignore architecture spec 'for simplicity'"
+            echo ""
+            echo "🔄 NEXT ROLE: QA (for validation)"
+            echo "   If defects found later: switch back to Developer"
+            echo ""
+          }
+
+          # ──────────────────────────────────────────────────────────────
+          # QA ROLE
+          # ──────────────────────────────────────────────────────────────
+          show_qa() {
+            echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+            echo "┃  ROLE: QA (Quality Assurance)                                      ┃"
+            echo "┃  When: Testing, validation, defect filing, regression runs         ┃"
+            echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+            echo ""
+            echo "📋 RESPONSIBILITIES:"
+            echo "   • Validate correctness and edge cases"
+            echo "   • CAN modify tests when expectations are wrong"
+            echo "   • File defects in DEFECTS.md"
+            echo "   • ONLY sign off when 100% of tests pass"
+            echo "   • Execute regression test suite"
+            echo ""
+            echo "✅ START-OF-ROLE CHECKLIST:"
+            echo "   [ ] Task status confirmed as IN_REVIEW"
+            echo "   [ ] Developer handoff message reviewed"
+            echo "   [ ] Test plan prepared"
+            echo ""
+            echo "✅ VALIDATION CHECKLIST:"
+            echo "   [ ] Happy path works (normal input, expected output)"
+            echo "   [ ] Edge cases handled (empty data, malformed input, timeouts)"
+            echo "   [ ] Error messages are clear"
+            echo "   [ ] Data retention policies enforced"
+            echo "   [ ] Alert rules trigger correctly"
+            echo "   [ ] Frontend displays stale data indicators correctly"
+            echo ""
+            echo "✅ TEST OWNERSHIP RULES (DEF-002):"
+            echo "   • Developer: Cannot modify tests. Tests are the specification."
+            echo "   • QA: CAN modify tests when test expectations are wrong/incorrect."
+            echo "   • Architect: Resolves specification conflicts when tests contradict."
+            echo ""
+            echo "✅ END-OF-ROLE CHECKLIST:"
+            echo "   [ ] All tests pass (100% - no partial sign-offs)"
+            echo "   [ ] Defects filed in DEFECTS.md if any found"
+            echo "   [ ] Test report generated with PASS/FAIL per criterion"
+            echo "   [ ] Task status updated (DONE or DEFECTS_FOUND)"
+            echo ""
+            echo "🚫 NEVER:"
+            echo "   • Sign off with failing tests"
+            echo "   • Skip regression suite before sign-off"
+            echo "   • File defects without reproduction steps"
+            echo ""
+            echo "🔄 NEXT ROLE:"
+            echo "   If PASS   → Architect (for merge/close)"
+            echo "   If FAIL   → Developer (to fix defects)"
+            echo ""
+          }
+
+          # ──────────────────────────────────────────────────────────────
+          # UI/UX DESIGNER ROLE
+          # ──────────────────────────────────────────────────────────────
+          show_ui_designer() {
+            echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+            echo "┃  ROLE: UI/UX DESIGNER                                              ┃"
+            echo "┃  When: Design tasks, frontend wireframes, component libraries      ┃"
+            echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+            echo ""
+            echo "📋 RESPONSIBILITIES:"
+            echo "   • Design user interfaces and experiences"
+            echo "   • Create wireframes, mockups, and prototypes"
+            echo "   • Define visual design systems and component libraries"
+            echo "   • Ensure accessibility and usability standards"
+            echo "   • Review frontend implementations for design fidelity"
+            echo "   • Update design documentation"
+            echo ""
+            echo "✅ START-OF-ROLE CHECKLIST:"
+            echo "   [ ] Design requirements from ARCHITECTURE.md reviewed"
+            echo "   [ ] User stories and acceptance criteria understood"
+            echo "   [ ] Existing design system reviewed (if applicable)"
+            echo ""
+            echo "✅ DELIVERABLES CHECKLIST:"
+            echo "   [ ] Wireframes for all screens/states"
+            echo "   [ ] Mockups with visual design applied"
+            echo "   [ ] Component library updates (if new components)"
+            echo "   [ ] Accessibility checklist (WCAG 2.1 AA minimum)"
+            echo "   [ ] Responsive design considerations documented"
+            echo ""
+            echo "✅ END-OF-ROLE CHECKLIST:"
+            echo "   [ ] Design documentation updated"
+            echo "   [ ] Design assets committed to repository"
+            echo "   [ ] Handoff notes for Developer role prepared"
+            echo "   [ ] Task status updated to IN_REVIEW or DONE"
+            echo ""
+            echo "🔄 NEXT ROLE: Developer (for implementation) or QA (for design review)"
+            echo ""
+          }
+
+          # ──────────────────────────────────────────────────────────────
+          # DISPLAY BASED ON INPUT
+          # ──────────────────────────────────────────────────────────────
+          case "$ROLE" in
+            architect)
+              show_architect
+              ;;
+            developer)
+              show_developer
+              ;;
+            qa)
+              show_qa
+              ;;
+            ui_designer)
+              show_ui_designer
+              ;;
+            all)
+              show_architect
+              echo ""
+              echo "══════════════════════════════════════════════════════════════════════"
+              echo ""
+              show_developer
+              echo ""
+              echo "══════════════════════════════════════════════════════════════════════"
+              echo ""
+              show_qa
+              echo ""
+              echo "══════════════════════════════════════════════════════════════════════"
+              echo ""
+              show_ui_designer
+              ;;
+            *)
+              echo "❌ Unknown role: $ROLE"
+              echo "Valid roles: architect, developer, qa, ui_designer, all"
+              exit 1
+              ;;
+          esac
+
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════════════╗"
+          echo "║  REMINDER: Only one role runs at a time.                            ║"
+          echo "║  Switch roles explicitly via ROLE SWITCH messages.                  ║"
+          echo "╚══════════════════════════════════════════════════════════════════════╝"

@@ -1,7 +1,7 @@
 # GitHub Actions Workflow for Extended Development
 
 ## Problem
-Subagents timeout after 5 minutes due to API rate limits during implementation tasks.
+Single worker (Abyssal Droid agent) timeout after 5 minutes due to API rate limits during implementation tasks.
 
 ## Solution
 GitHub Actions provides:
@@ -19,21 +19,22 @@ Runs automatically on push/PR:
 - Alembic migration up/down test
 
 ### 2. Development Tasks (`dev-tasks.yml`)
-Manually triggered for implementation work:
+Manually triggered for implementation work by any role:
 ```bash
 # Trigger via GitHub UI or API
 # - Provides 25-minute timeout
 # - Has real PostgreSQL + Redis
 # - Can run complex implementation tasks
+# - Specify role: architect, developer, qa, ui_designer
 ```
 
-## How This Helps the Team Workflow
+## How This Helps the Workflow
 
 | Before | After |
 |--------|-------|
-| QA subagent runs pytest (3 min) → times out | GitHub Actions runs pytest (2 min) → QA just reviews |
-| Developer subagent implements (5 min) → times out | Trigger dev-task workflow (25 min) → Developer monitors |
-| Docker build in subagent (slow) | Docker build in CI (fast, cached) |
+| QA role runs pytest (3 min) → times out | GitHub Actions runs pytest (2 min) → QA role reviews |
+| Developer role implements (5 min) → times out | Trigger dev-task workflow (25 min) → Developer role monitors |
+| Docker build in agent (slow) | Docker build in CI (fast, cached) |
 | Sequential testing | Parallel jobs |
 
 ## Next Steps to Enable
@@ -45,6 +46,6 @@ Manually triggered for implementation work:
 ## Future Enhancement
 
 Once running, we can:
-- Add self-hosted runner with OpenClaw for true subagent execution
-- Auto-trigger workflows from Architect assignments
+- Add self-hosted runner with OpenClaw for true role execution
+- Auto-trigger workflows from Architect role assignments
 - Report results back to main session

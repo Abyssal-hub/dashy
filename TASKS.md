@@ -7,7 +7,7 @@
 
 ## Legend
 - `[]` = BACKLOG
-- `[ASSIGNED]` = Assigned to team member
+- `[ASSIGNED]` = Ready for role execution
 - `[IN_PROGRESS]` = Work started
 - `[BLOCKED]` = Waiting on input/blocker
 - `[IN_REVIEW]` = Complete, pending review
@@ -307,18 +307,22 @@
 **Notes:** Log module is production-ready. QA can now view system logs to debug issues during QA-REG-003. All critical system events (consumer start/stop, batch failures, ingest operations) are logged.
 
 ### QA-REG-003: Regression check - Backend complete
-**Status:** []
+**Status:** [IN_PROGRESS]
 **Priority:** P1
 **Assigned:** QA
 **Depends:** DEV-008, DEV-009, DEV-010, DEV-011, DEV-012
 **Deliverable:** CI confirms all backend features are stable
 **Acceptance Criteria:**
-- [ ] Full pytest suite passes
-- [ ] Data ingestion pipeline works end-to-end
+- [~] Full pytest suite passes (64 passing, 6 failing - portfolio/calendar tests need fixes)
+- [x] Data ingestion pipeline works end-to-end
 - [ ] Alert system triggers and emails correctly
-- [ ] Log module records and retrieves system logs
-- [ ] Redis consumer runs without errors
-- [ ] All migrations apply cleanly on fresh DB
+- [x] Log module records and retrieves system logs
+- [x] Redis consumer runs without errors
+- [x] All migrations apply cleanly on fresh DB
+- [x] Alembic migration 006 duplicate index bug FIXED
+**Notes:** 
+- Fixed DEF-003: Migration 006 had duplicate index creation (index=True on column + manual op.create_index()). Removed manual creates for auto-generated indexes.
+- Created test_alembic.py with regression tests for migration consistency and duplicate index detection.
 **Gate:** Must pass before DEV-013 is assigned.
 
 ### DEV-013: Scraper worker - Yahoo Finance

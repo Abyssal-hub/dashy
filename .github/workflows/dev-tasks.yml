@@ -1,5 +1,15 @@
 name: Development Tasks
 
+# Single Worker Model: Abyssal Droid Agent
+# The agent switches roles throughout the workflow:
+# - Architect: Task planning, architecture design, specification conflicts
+# - Developer: Implementation, coding, writing unit tests
+# - QA: Testing, validation, defect filing, regression runs
+# - UI/UX Designer: Design tasks, frontend wireframes, component libraries
+#
+# Each workflow run executes ONE role at a time.
+# Multiple runs may be needed for a complete task lifecycle.
+
 on:
   workflow_dispatch:
     inputs:
@@ -11,6 +21,11 @@ on:
         description: 'Task ID (e.g., DEV-004)'
         required: true
         type: string
+      role:
+        description: 'Role for this execution (architect, developer, qa, ui_designer)'
+        required: true
+        type: string
+        default: 'developer'
       timeout_minutes:
         description: 'Timeout in minutes (max 30)'
         required: false
@@ -88,10 +103,25 @@ jobs:
           REFRESH_TOKEN_EXPIRE_DAYS: 7
           TASK_DESCRIPTION: ${{ inputs.task }}
           TASK_ID: ${{ inputs.task_id }}
+          ROLE: ${{ inputs.role }}
         run: |
-          echo "Executing task: $TASK_ID - $TASK_DESCRIPTION"
-          echo "This is where OpenClaw subagent execution would run"
-          echo "With 25-minute timeout and real PostgreSQL/Redis services"
+          echo "========================================"
+          echo "Abyssal Droid Agent - Role Execution"
+          echo "========================================"
+          echo "Task: $TASK_ID"
+          echo "Description: $TASK_DESCRIPTION"
+          echo "Role: $ROLE"
+          echo "========================================"
+          echo ""
+          echo "Executing as $ROLE role..."
+          echo "This is where the Abyssal Droid agent performs work"
+          echo "in the specified role with the task context."
+          echo ""
+          echo "Role switching workflow:"
+          echo "  architect -> developer -> qa -> architect (merge)"
+          echo "  (or back to developer if defects found)"
+          echo ""
+          echo "Timeout: ${{ inputs.timeout_minutes }} minutes"
 
       - name: Run final verification
         working-directory: ./backend

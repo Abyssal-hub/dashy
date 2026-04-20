@@ -1,35 +1,48 @@
 # Team Workflow: Personal Monitoring Dashboard
 
-**Version:** 1.0  
-**Effective Date:** 2024-01-15  
-**Team:** Architect (Lead), Developer, QA, UI/UX Designer
+**Version:** 2.0  
+**Effective Date:** 2026-04-20  
+**Worker:** Abyssal Droid Agent
 
 ---
 
-## Roles & Responsibilities
+## Worker: Abyssal Droid Agent
 
-### Architect (Lead)
+A single agent that changes role according to the stage of work. No other workers exist.
+
+### Role: Architect (Lead)
+**When:** Task planning, architecture design, specification conflicts, phase gates  
+**Responsibilities:**
 - Defines technical architecture in `ARCHITECTURE.md`
-- Assigns tasks and manages workflow
+- Assigns tasks and manages workflow via `TASKS.md`
 - Reviews structural code changes
 - Resolves specification conflicts
 - Owns `DECISIONS.md` and `TASKS.md`
+- Decides when to switch to Developer role
 
-### Developer
+### Role: Developer
+**When:** Implementation, coding, writing unit tests  
+**Responsibilities:**
 - Implements features per `ARCHITECTURE.md` spec
 - Writes unit tests for implemented code
-- **Cannot modify tests** - tests are the specification
-- Reports blockers to Architect
+- **Cannot modify tests** — tests are the specification
+- Reports blockers to Architect (self-report, then switch role)
 - Commits and pushes per milestone
+- Decides when to switch to QA role for validation
 
-### QA
+### Role: QA
+**When:** Testing, validation, defect filing, regression runs  
+**Responsibilities:**
 - Validates correctness and edge cases
 - **Can modify tests** when expectations are wrong
 - Files defects in `DEFECTS.md`
 - Only signs off when 100% of tests pass
 - Executes regression test suite
+- Decides when to switch back to Developer (if defects) or Architect (if done)
 
-### UI/UX Designer
+### Role: UI/UX Designer
+**When:** Design tasks, frontend wireframes, component libraries  
+**Responsibilities:**
 - Designs user interfaces and experiences
 - Creates wireframes, mockups, and prototypes
 - Defines visual design systems and component libraries
@@ -42,17 +55,17 @@
 ## 1. Work Artifacts
 
 ### 1.1 Single Source of Truth
-| Artifact | Location | Owner | Purpose |
-|----------|----------|-------|---------|
+| Artifact | Location | Role | Purpose |
+|----------|----------|------|---------|
 | **Architecture** | `ARCHITECTURE.md` | Architect | Technical blueprint. All implementation references this. |
-| **Workflow** | `WORKFLOW.md` (this file) | Architect | How the team works together. |
+| **Workflow** | `WORKFLOW.md` (this file) | Architect | How the agent works across roles. |
 | **Task Board** | `TASKS.md` | Architect | Active work items, assignments, status. |
 | **Decision Log** | `DECISIONS.md` | Architect | Why decisions were made. Updated when architecture changes. |
 | **Defect Tracker** | `DEFECTS.md` | QA | Bug reports, reproduction steps, resolution status. |
 
 ### 1.2 Artifact Rules
 - **Never work from memory.** If it is not in `ARCHITECTURE.md`, it does not exist.
-- **Architect updates `ARCHITECTURE.md` first.** Then notifies team of changes.
+- **Architect updates `ARCHITECTURE.md` first.** Then proceeds to Developer role.
 - **Developer and QA can suggest changes** via comments, but Architect approves and writes the change.
 
 ---
@@ -69,16 +82,16 @@ BACKLOG → ASSIGNED → IN_PROGRESS → IN_REVIEW → DONE
 ```
 
 ### 2.2 State Definitions
-| State | Meaning | Who Moves |
-|-------|---------|-----------|
+| State | Meaning | Role |
+|-------|---------|------|
 | **BACKLOG** | Work identified but not assigned | Architect |
-| **ASSIGNED** | Task assigned to Developer or QA | Architect |
-| **IN_PROGRESS** | Work actively being done | Developer/QA |
-| **BLOCKED** | Cannot proceed without input | Developer/QA |
+| **ASSIGNED** | Task ready to start | Architect |
+| **IN_PROGRESS** | Work actively being done | Developer/QA/Designer |
+| **BLOCKED** | Cannot proceed without input | Any |
 | **UNBLOCKED** | Blocker resolved | Architect |
 | **IN_REVIEW** | Deliverable complete, ready for review | Developer/QA |
-| **DEFECTS_FOUND** | QA found issues, returned to Developer | QA |
-| **FIXED** | Developer addressed defects | Developer |
+| **DEFECTS_FOUND** | Validation found issues | QA |
+| **FIXED** | Defects addressed | Developer |
 | **DONE** | Accepted by Architect, merged | Architect |
 
 ### 2.3 Task ID Format
@@ -92,20 +105,26 @@ BACKLOG → ASSIGNED → IN_PROGRESS → IN_REVIEW → DONE
 
 ## 3. Daily Workflow
 
-### 3.1 Morning Assignment (Architect → Team)
+### 3.1 Morning Assignment (Architect)
 ```
 Architect reviews TASKS.md
          ↓
 [For each ready task]
          ↓
-Architect spawns/assigns to Developer or QA
-         ↓
-Team member acknowledges, asks clarifying questions
+Architect selects task and switches to appropriate role
          ↓
 Work begins
 ```
 
-### 3.2 Work Execution (Developer/QA)
+### 3.2 Role-Specific Execution
+
+**As Architect:**
+- Plan and define the task
+- Update `ARCHITECTURE.md` if needed
+- Update `TASKS.md` with clear deliverables
+- Switch to Developer, QA, or Designer role as needed
+
+**As Developer:**
 ```
 Pick up ASSIGNED task
          ↓
@@ -115,14 +134,48 @@ Implement / Test per ARCHITECTURE.md spec
          ↓
 [If ambiguity found]
          ↓
-Report BLOCKED to Architect with specific question
+Switch to Architect role, report BLOCKER with specific question
          ↓
 [If completed]
          ↓
-Move to IN_REVIEW, notify Architect
+Move to IN_REVIEW, switch to QA role for validation
 ```
 
-### 3.3 Review Cycle (Architect → QA)
+**As QA:**
+```
+Receive work from Developer (self handoff)
+         ↓
+Execute test plan
+         ↓
+[If defects found OR tests fail]
+         ↓
+Do NOT sign off
+File DEF in DEFECTS.md
+Move DEV task to DEFECTS_FOUND
+Switch to Developer role to fix
+         ↓
+Developer fixes, moves to FIXED
+Switch back to QA role and retest
+         ↓
+[If tests pass]
+         ↓
+QA marks task DONE
+Switch to Architect role for merge/close
+```
+
+**As UI/UX Designer:**
+```
+Receive design task
+         ↓
+Create wireframes/mockups/prototypes
+         ↓
+Update design documentation
+         ↓
+Switch to Developer role for implementation
+or switch to QA role for design review
+```
+
+### 3.3 Review Cycle
 
 **Rule:** If QA tests fail, QA does NOT sign off. Production cycle repeats and goes back to Developer.
 
@@ -138,40 +191,15 @@ When tests fail:
 2. If test expectations are wrong, QA fixes the tests
 3. If there's a conflict between test files, Architect decides which is correct
 
-```
-Developer marks DEV task IN_REVIEW
-         ↓
-Architect does structural review (15 min max)
-         ↓
-Architect assigns QA task to validate the work
-         ↓
-QA executes test plan
-         ↓
-[If defects found OR tests fail]
-         ↓
-QA does NOT sign off
-QA files DEF in DEFECTS.md
-QA moves DEV task to DEFECTS_FOUND
-         ↓
-Production cycle repeats → back to Developer
-         ↓
-Developer fixes, moves to FIXED
-QA retests
-         ↓
-[If tests pass]
-         ↓
-QA marks task DONE
-Architect merges/closes
-```
-
 ---
 
 ## 4. Communication Protocols
 
-### 4.1 Handoff Messages
+### 4.1 Role Switch Messages
 
 **Architect → Developer (New Task):**
 ```
+ROLE SWITCH: Architect → Developer
 TASK: DEV-001
 PRIORITY: P1 (blocking other work) / P2 (normal) / P3 (nice to have)
 SOURCE: ARCHITECTURE.md Section X.Y
@@ -186,6 +214,7 @@ DEADLINE: [Date or relative to other tasks]
 
 **Developer → Architect (Blocked):**
 ```
+ROLE SWITCH: Developer → Architect
 BLOCKER: DEV-001
 ISSUE: [Specific problem]
 TRIED: [What you already attempted]
@@ -195,17 +224,19 @@ B. [Option B with pros/cons]
 RECOMMENDATION: [Which option you prefer and why]
 ```
 
-**Developer → Architect (Complete):**
+**Developer → QA (Complete):**
 ```
+ROLE SWITCH: Developer → QA
 COMPLETE: DEV-001
 DELIVERABLE: [What was built]
 LOCATION: [File paths, URLs]
 NOTES: [Where architecture was unclear, suggestions for improvement]
-READY FOR: QA review
+READY FOR: QA validation
 ```
 
 **QA → Developer (Defect):**
 ```
+ROLE SWITCH: QA → Developer
 DEFECT: DEF-001
 RELATED TO: DEV-001
 SEVERITY: Blocker / Major / Minor / Cosmetic
@@ -220,6 +251,7 @@ EVIDENCE: [Logs, screenshots, API responses]
 
 **QA → Architect (Sign-off):**
 ```
+ROLE SWITCH: QA → Architect
 SIGN-OFF: DEV-001
 QA TASK: QA-001
 RESULT: PASS / PASS WITH NOTES / FAIL (DEF-XXX filed)
@@ -239,7 +271,7 @@ NOTES: [Any observations not defects]
 ## 5. Review Checkpoints
 
 ### 5.1 Architect Review (Post-Development)
-**Purpose:** Ensure code structure matches architecture.
+**Purpose:** Ensure code structure matches architecture.  
 **Not:** Line-by-line code review (QA handles correctness).
 
 **Checklist:**
@@ -269,9 +301,9 @@ NOTES: [Any observations not defects]
 
 **After Module Completion:**
 1. Developer delivers module
-2. Architect reviews structure
-3. QA validates thoroughly
-4. Architect merges to main
+2. Architect reviews structure (switch to Architect role)
+3. QA validates thoroughly (switch to QA role)
+4. Architect merges to main (switch to Architect role)
 5. Update `DECISIONS.md` if any in-flight changes were made
 
 **After First Iteration (Project-Wide):**
@@ -286,34 +318,34 @@ NOTES: [Any observations not defects]
 ## 6. Exception Handling
 
 ### 6.1 Scope Change Mid-Task
-**Rule:** Developer stops work immediately. Reports to Architect.
+**Rule:** Developer stops work immediately. Switches to Architect role to report.  
 **Architect decides:**
 - A. Complete task as-is, new work becomes new task
 - B. Revise task scope, update acceptance criteria
 - C. Cancel task, remove from backlog
 
 ### 6.2 Architecture Proven Wrong
-**Rule:** Developer stops, reports specific flaw.
+**Rule:** Developer stops, switches to Architect role, reports specific flaw.  
 **Architect:**
 1. Acknowledges within 4 hours
 2. Revises `ARCHITECTURE.md` with new design
 3. Updates `DECISIONS.md` with rationale for change
-4. Notifies team of revised approach
+4. Notifies team (self) of revised approach
 5. Resumes work with new spec
 
 ### 6.3 External API Breaks (Yahoo, CoinGecko, etc.)
-**Rule:** This is not a code defect. This is an operational issue.
+**Rule:** This is not a code defect. This is an operational issue.  
 **Architect:**
 1. Confirms circuit breaker is working as designed
 2. Decides: Wait for fix vs implement fallback vs disable module temporarily
 3. Updates `DECISIONS.md` with incident record
 4. May create new task to add fallback data source
 
-### 6.4 Team Member Unresponsive
-**Rule:** Architect checks `subagents list` for status.
-**If agent stuck:**
-1. Attempt `subagents steer` with clarifying question
-2. If no response in 24 hours, kill and respawn with simplified task
+### 6.4 Agent Unresponsive
+**Rule:** Check `session_status` or `sessions_list` for status.  
+**If stuck:**
+1. Attempt `sessions_send` with clarifying question
+2. If no response in 24 hours, restart session with simplified task
 3. Document in `DECISIONS.md` if pattern emerges
 
 ---
@@ -324,9 +356,9 @@ NOTES: [Any observations not defects]
 A task is DONE when:
 - [ ] Deliverable matches ARCHITECTURE.md spec
 - [ ] Code is committed to repository
-- [ ] Unit tests pass (Developer)
-- [ ] QA validation passes (QA sign-off)
-- [ ] Architect structural review passes
+- [ ] Unit tests pass (Developer role)
+- [ ] QA validation passes (QA role sign-off)
+- [ ] Architect structural review passes (Architect role)
 - [ ] No open DEFECTS against the task
 - [ ] Documentation updated (if architecture changed)
 
@@ -413,32 +445,13 @@ DEV-XXX: Brief description of what was implemented
 
 ---
 
-## 9. Meeting Cadence
-
-### 9.1 Async-First
-Default is async communication via task updates.
-
-### 9.2 Sync Touchpoints
-| Meeting | Trigger | Duration | Attendees |
-|---------|---------|----------|-----------|
-| **Kickoff** | Phase 1 starts | 30 min | All |
-| **Mid-phase check** | 50% tasks complete | 15 min | All |
-| **Phase 1 retrospective** | Phase 1 done | 30 min | All |
-
-### 9.3 Ad-hoc Sync
-Called by Architect if:
-- Major architecture revision needed
-- Blocker affects multiple tasks
-- External dependency changes (API breaks, etc.)
-
----
-
-## 10. Revision History
+## 9. Revision History
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2024-01-15 | Initial workflow | Architect |
+| 2.0 | 2026-04-20 | Single worker (Abyssal Droid) with role switching | Architect |
 
 ---
 
-**Next Step:** Create `TASKS.md` with Phase 1 work breakdown, then spawn Developer and QA agents.
+**Next Step:** Create `TASKS.md` with Phase 1 work breakdown, then switch to appropriate role and begin work.
