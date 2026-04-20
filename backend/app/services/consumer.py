@@ -93,14 +93,12 @@ class RedisConsumer:
         
         # Write system log for consumer start
         try:
-            async with async_session_maker() as session:
-                await write_system_log(
-                    db_session=session,
-                    severity="INFO",
-                    message="Redis consumer started",
-                    source="consumer",
-                    metadata={"queue": QUEUE_NAME, "batch_size": BATCH_SIZE},
-                )
+            await write_system_log(
+                severity="INFO",
+                message="Redis consumer started",
+                source="consumer",
+                metadata={"queue": QUEUE_NAME, "batch_size": BATCH_SIZE},
+            )
         except Exception:
             # Don't fail startup if logging fails
             logger.warning("Failed to write system log for consumer start")
@@ -139,14 +137,12 @@ class RedisConsumer:
         
         # Write system log for consumer stop
         try:
-            async with async_session_maker() as session:
-                await write_system_log(
-                    db_session=session,
-                    severity="INFO",
-                    message="Redis consumer stopped gracefully",
-                    source="consumer",
-                    metadata={"queue": QUEUE_NAME},
-                )
+            await write_system_log(
+                severity="INFO",
+                message="Redis consumer stopped gracefully",
+                source="consumer",
+                metadata={"queue": QUEUE_NAME},
+            )
         except Exception:
             # Don't fail shutdown if logging fails
             logger.warning("Failed to write system log for consumer stop")
@@ -240,19 +236,17 @@ class RedisConsumer:
                     )
                     # Write system log for permanent failure
                     try:
-                        async with async_session_maker() as session:
-                            await write_system_log(
-                                db_session=session,
-                                severity="ERROR",
-                                message=f"{operation_name} failed permanently after {MAX_RETRIES} retries",
-                                source="consumer",
-                                metadata={
-                                    "operation": operation_name,
-                                    "records_dropped": len(data),
-                                    "error": str(e),
-                                    "queue": QUEUE_NAME,
-                                },
-                            )
+                        await write_system_log(
+                            severity="ERROR",
+                            message=f"{operation_name} failed permanently after {MAX_RETRIES} retries",
+                            source="consumer",
+                            metadata={
+                                "operation": operation_name,
+                                "records_dropped": len(data),
+                                "error": str(e),
+                                "queue": QUEUE_NAME,
+                            },
+                        )
                     except Exception:
                         logger.warning("Failed to write system log for consumer error")
                     return

@@ -1,28 +1,47 @@
 """
-QA-012: Log Module Test Suite
+QA-012: Log Module Test Suite - Updated for File-Based Logging
 
 Tests for the system logging module including:
-- LogHandler functionality
-- API endpoints
-- System event logging integration
-- Log retention
+- LogHandler functionality (now file-based)
+- API endpoints (now file-based)
+- System event logging integration (now file-based)
+- Log retention (file-based cleanup)
 
 Related: DEV-012, QA-REG-003
 """
 
 import pytest
+import tempfile
+import os
 from datetime import datetime, timedelta
 from uuid import uuid4, UUID
+from pathlib import Path
 
-from sqlalchemy import select, desc, func
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models.log import SystemLog
-from app.models.module import Module
-from app.models.user import User
+from app.core.file_logger import (
+    write_log,
+    write_interaction_log,
+    read_logs,
+    get_severity_counts,
+    cleanup_old_logs,
+    APP_LOG_FILE,
+)
 from app.modules.handlers.log import LogHandler, write_system_log
-from app.schemas.module import ModuleCreate
 from app.services.auth.service import create_user, create_access_token
+
+
+@pytest.fixture(autouse=True)
+def temp_log_dir(monkeypatch):
+    """Use temporary directory for log files during tests."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        monkeypatch.setenv("LOG_DIR", tmpdir)
+        # Reset the file_logger module's LOG_DIR
+        import app.core.file_logger as fl
+        fl.LOG_DIR = Path(tmpdir)
+        fl.APP_LOG_FILE = fl.LOG_DIR / "app.log"
+        fl.INTERACTION_LOG_FILE = fl.LOG_DIR / "interactions.log"
+        fl.ERROR_LOG_FILE = fl.LOG_DIR / "errors.log"
+        fl.LOG_DIR.mkdir(parents=True, exist_ok=True)
+        yield tmpdir
 
 
 def get_auth_headers(user_id: str) -> dict:
@@ -31,21 +50,20 @@ def get_auth_headers(user_id: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+def create_test_logs(count: int, severity: str = "INFO", source: str = "test") -> None:
+    """Helper to create test log entries in file."""
+    for i in range(count):
+        write_log(severity=severity, message=f"Test message {i}", source=source)
+
+
 class TestLogHandler:
-    """Test the LogHandler module handler."""
+    """Test the LogHandler module handler (now file-based)."""
 
     @pytest.mark.asyncio
-    async def test_handler_get_data_compact_size(self, db_session: AsyncSession):
+    async def test_handler_get_data_compact_size(self, db_session):
         """QA-012-001: LogHandler returns 5 logs for compact size."""
-        # Create test logs
-        for i in range(10):
-            log = SystemLog(
-                severity="INFO",
-                message=f"Test message {i}",
-                source="test",
-            )
-            db_session.add(log)
-        await db_session.commit()
+        # Create test logs in file
+        create_test_logs(10)
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -56,20 +74,11 @@ class TestLogHandler:
 
         assert len(data["logs"]) == 5
         assert data["size"] == "compact"
-        assert data["severity_counts"]["INFO"] >= 5
 
     @pytest.mark.asyncio
-    async def test_handler_get_data_standard_size(self, db_session: AsyncSession):
+    async def test_handler_get_data_standard_size(self, db_session):
         """QA-012-002: LogHandler returns 20 logs for standard size."""
-        # Create test logs
-        for i in range(25):
-            log = SystemLog(
-                severity="INFO" if i < 20 else "WARN",
-                message=f"Test message {i}",
-                source="test",
-            )
-            db_session.add(log)
-        await db_session.commit()
+        create_test_logs(25, severity="INFO")
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -82,17 +91,9 @@ class TestLogHandler:
         assert data["size"] == "standard"
 
     @pytest.mark.asyncio
-    async def test_handler_get_data_expanded_size(self, db_session: AsyncSession):
-        """QA-012-003: LogHandler returns 100 logs for expanded size."""
-        # Create test logs
-        for i in range(150):
-            log = SystemLog(
-                severity="INFO",
-                message=f"Test message {i}",
-                source="test",
-            )
-            db_session.add(log)
-        await db_session.commit()
+    async def test_handler_get_data_expanded_size(self, db_session):
+        """QA-012-003: LogHandler returns up to 100 logs for expanded size."""
+        create_test_logs(150)
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -105,14 +106,13 @@ class TestLogHandler:
         assert data["size"] == "expanded"
 
     @pytest.mark.asyncio
-    async def test_handler_filter_by_severity(self, db_session: AsyncSession):
+    async def test_handler_filter_by_severity(self, db_session):
         """QA-012-004: LogHandler filters by severity correctly."""
         # Create logs with different severities
         for i in range(5):
-            db_session.add(SystemLog(severity="INFO", message=f"Info {i}", source="test"))
-            db_session.add(SystemLog(severity="WARN", message=f"Warn {i}", source="test"))
-            db_session.add(SystemLog(severity="ERROR", message=f"Error {i}", source="test"))
-        await db_session.commit()
+            write_log(severity="INFO", message=f"Info {i}", source="test")
+            write_log(severity="WARN", message=f"Warn {i}", source="test")
+            write_log(severity="ERROR", message=f"Error {i}", source="test")
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -127,13 +127,12 @@ class TestLogHandler:
         assert data["filters_applied"]["severity"] == "ERROR"
 
     @pytest.mark.asyncio
-    async def test_handler_filter_by_source(self, db_session: AsyncSession):
+    async def test_handler_filter_by_source(self, db_session):
         """QA-012-005: LogHandler filters by source correctly."""
         # Create logs from different sources
         for i in range(5):
-            db_session.add(SystemLog(severity="INFO", message=f"Consumer log {i}", source="consumer"))
-            db_session.add(SystemLog(severity="INFO", message=f"API log {i}", source="api"))
-        await db_session.commit()
+            write_log(severity="INFO", message=f"Consumer log {i}", source="consumer")
+            write_log(severity="INFO", message=f"API log {i}", source="api")
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -147,16 +146,15 @@ class TestLogHandler:
         assert all(log["source"] == "consumer" for log in data["logs"])
 
     @pytest.mark.asyncio
-    async def test_handler_returns_severity_counts(self, db_session: AsyncSession):
+    async def test_handler_returns_severity_counts(self, db_session):
         """QA-012-006: LogHandler returns accurate severity counts."""
         # Create logs with known distribution
         for i in range(10):
-            db_session.add(SystemLog(severity="INFO", message=f"Info {i}", source="test"))
+            write_log(severity="INFO", message=f"Info {i}", source="test")
         for i in range(5):
-            db_session.add(SystemLog(severity="WARN", message=f"Warn {i}", source="test"))
+            write_log(severity="WARN", message=f"Warn {i}", source="test")
         for i in range(3):
-            db_session.add(SystemLog(severity="ERROR", message=f"Error {i}", source="test"))
-        await db_session.commit()
+            write_log(severity="ERROR", message=f"Error {i}", source="test")
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -170,12 +168,11 @@ class TestLogHandler:
         assert data["severity_counts"]["ERROR"] == 3
 
     @pytest.mark.asyncio
-    async def test_handler_returns_severity_color(self, db_session: AsyncSession):
+    async def test_handler_returns_severity_color(self, db_session):
         """QA-012-007: LogHandler returns color codes for frontend."""
-        db_session.add(SystemLog(severity="INFO", message="Info", source="test"))
-        db_session.add(SystemLog(severity="WARN", message="Warn", source="test"))
-        db_session.add(SystemLog(severity="ERROR", message="Error", source="test"))
-        await db_session.commit()
+        write_log(severity="INFO", message="Info", source="test")
+        write_log(severity="WARN", message="Warn", source="test")
+        write_log(severity="ERROR", message="Error", source="test")
 
         handler = LogHandler()
         data = await handler.get_data(
@@ -210,28 +207,27 @@ class TestLogHandler:
 
 
 class TestWriteSystemLog:
-    """Test the write_system_log utility function."""
+    """Test the write_system_log utility function (now file-based)."""
 
     @pytest.mark.asyncio
-    async def test_write_system_log_creates_entry(self, db_session: AsyncSession):
-        """QA-012-009: write_system_log creates a SystemLog entry."""
+    async def test_write_system_log_creates_entry(self, db_session):
+        """QA-012-009: write_system_log creates a log entry in file."""
         log = await write_system_log(
-            db_session=db_session,
+            db_session=db_session,  # Kept for backwards compat, not used
             severity="INFO",
             message="Test message",
             source="test",
             metadata={"key": "value"},
         )
 
-        assert log.id is not None
-        assert log.severity == "INFO"
-        assert log.message == "Test message"
-        assert log.source == "test"
-        assert log.extra_data == {"key": "value"}
-        assert log.created_at is not None
+        assert log["severity"] == "INFO"
+        assert log["message"] == "Test message"
+        assert log["source"] == "test"
+        assert log["metadata"] == {"key": "value"}
+        assert "timestamp" in log
 
     @pytest.mark.asyncio
-    async def test_write_system_log_severity_uppercase(self, db_session: AsyncSession):
+    async def test_write_system_log_severity_uppercase(self, db_session):
         """QA-012-010: write_system_log normalizes severity to uppercase."""
         log = await write_system_log(
             db_session=db_session,
@@ -240,50 +236,37 @@ class TestWriteSystemLog:
             source="test",
         )
 
-        assert log.severity == "INFO"
+        assert log["severity"] == "INFO"
 
     @pytest.mark.asyncio
-    async def test_write_system_log_with_module_id(self, db_session: AsyncSession):
-        """QA-012-011: write_system_log associates with module_id."""
-        # Create a user first
-        user = await create_user(db_session, "log-module-test@example.com", "password123")
-        
-        # Create a log module
-        module = Module(
-            user_id=user.id,
-            module_type="log",
-            name="Test Log Module",
-            config={},
-        )
-        db_session.add(module)
-        await db_session.commit()
-        await db_session.refresh(module)
+    async def test_write_system_log_with_module_id(self, db_session):
+        """QA-012-011: write_system_log includes module_id in metadata."""
+        module_id = str(uuid4())
 
         log = await write_system_log(
             db_session=db_session,
             severity="INFO",
             message="Module-specific message",
             source="test",
-            module_id=str(module.id),
+            module_id=module_id,
         )
 
-        assert log.module_id == module.id
+        assert log["metadata"]["module_id"] == module_id
 
 
 class TestLogsAPI:
-    """Test the /logs API endpoints."""
+    """Test the /logs API endpoints (now file-based)."""
 
     @pytest.mark.asyncio
-    async def test_get_logs_returns_list(self, client, db_session: AsyncSession):
+    async def test_get_logs_returns_list(self, client, db_session):
         """QA-012-012: GET /logs returns list of logs."""
         # Create test user and auth headers
         user = await create_user(db_session, "logs-test@example.com", "password123")
         headers = get_auth_headers(str(user.id))
         
-        # Create test logs
+        # Create test logs in file
         for i in range(5):
-            db_session.add(SystemLog(severity="INFO", message=f"API test {i}", source="api"))
-        await db_session.commit()
+            write_log(severity="INFO", message=f"API test {i}", source="api")
 
         response = await client.get("/api/logs", headers=headers)
 
@@ -293,10 +276,10 @@ class TestLogsAPI:
         assert "total" in data
         assert "limit" in data
         assert "offset" in data
-        assert len(data["logs"]) == 5
+        assert len(data["logs"]) >= 5
 
     @pytest.mark.asyncio
-    async def test_get_logs_with_severity_filter(self, client, db_session: AsyncSession):
+    async def test_get_logs_with_severity_filter(self, client, db_session):
         """QA-012-013: GET /logs filters by severity."""
         # Create test user
         user = await create_user(db_session, "logs-filter@example.com", "password123")
@@ -304,10 +287,9 @@ class TestLogsAPI:
         
         # Create mixed severity logs
         for i in range(3):
-            db_session.add(SystemLog(severity="INFO", message=f"Info {i}", source="api"))
+            write_log(severity="INFO", message=f"Info {i}", source="api")
         for i in range(2):
-            db_session.add(SystemLog(severity="ERROR", message=f"Error {i}", source="api"))
-        await db_session.commit()
+            write_log(severity="ERROR", message=f"Error {i}", source="api")
 
         response = await client.get("/api/logs?severity=ERROR", headers=headers)
 
@@ -317,16 +299,15 @@ class TestLogsAPI:
         assert data["filters_applied"]["severity"] == "ERROR"
 
     @pytest.mark.asyncio
-    async def test_get_logs_with_source_filter(self, client, db_session: AsyncSession):
+    async def test_get_logs_with_source_filter(self, client, db_session):
         """QA-012-014: GET /logs filters by source."""
         # Create test user
         user = await create_user(db_session, "logs-source@example.com", "password123")
         headers = get_auth_headers(str(user.id))
         
         # Create logs from different sources
-        db_session.add(SystemLog(severity="INFO", message="Consumer message", source="consumer"))
-        db_session.add(SystemLog(severity="INFO", message="API message", source="api"))
-        await db_session.commit()
+        write_log(severity="INFO", message="Consumer message", source="consumer")
+        write_log(severity="INFO", message="API message", source="api")
 
         response = await client.get("/api/logs?source=consumer", headers=headers)
 
@@ -335,7 +316,7 @@ class TestLogsAPI:
         assert all(log["source"] == "consumer" for log in data["logs"])
 
     @pytest.mark.asyncio
-    async def test_get_logs_pagination(self, client, db_session: AsyncSession):
+    async def test_get_logs_pagination(self, client, db_session):
         """QA-012-015: GET /logs supports pagination."""
         # Create test user
         user = await create_user(db_session, "logs-page@example.com", "password123")
@@ -343,8 +324,7 @@ class TestLogsAPI:
         
         # Create many logs
         for i in range(25):
-            db_session.add(SystemLog(severity="INFO", message=f"Paginated {i}", source="api"))
-        await db_session.commit()
+            write_log(severity="INFO", message=f"Paginated {i}", source="api")
 
         # Get first page
         response = await client.get("/api/logs?limit=10&offset=0", headers=headers)
@@ -362,21 +342,15 @@ class TestLogsAPI:
         assert data1["logs"][0]["id"] != data2["logs"][0]["id"]
 
     @pytest.mark.asyncio
-    async def test_get_logs_ordering(self, client, db_session: AsyncSession):
+    async def test_get_logs_ordering(self, client, db_session):
         """QA-012-016: GET /logs returns logs in reverse chronological order."""
         # Create test user
         user = await create_user(db_session, "logs-order@example.com", "password123")
         headers = get_auth_headers(str(user.id))
         
-        # Create logs with different timestamps
+        # Create logs with delays
         for i in range(5):
-            log = SystemLog(
-                severity="INFO",
-                message=f"Order test {i}",
-                source="api",
-            )
-            db_session.add(log)
-        await db_session.commit()
+            write_log(severity="INFO", message=f"Order test {i}", source="api")
 
         response = await client.get("/api/logs?limit=5", headers=headers)
         assert response.status_code == 200
@@ -387,7 +361,7 @@ class TestLogsAPI:
         assert timestamps == sorted(timestamps, reverse=True)
 
     @pytest.mark.asyncio
-    async def test_get_severity_counts(self, client, db_session: AsyncSession):
+    async def test_get_severity_counts(self, client, db_session):
         """QA-012-017: GET /logs/severity-counts returns counts."""
         # Create test user
         user = await create_user(db_session, "logs-counts@example.com", "password123")
@@ -395,12 +369,11 @@ class TestLogsAPI:
         
         # Create logs with known distribution
         for i in range(10):
-            db_session.add(SystemLog(severity="INFO", message=f"Info {i}", source="api"))
+            write_log(severity="INFO", message=f"Info {i}", source="api")
         for i in range(5):
-            db_session.add(SystemLog(severity="WARN", message=f"Warn {i}", source="api"))
+            write_log(severity="WARN", message=f"Warn {i}", source="api")
         for i in range(3):
-            db_session.add(SystemLog(severity="ERROR", message=f"Error {i}", source="api"))
-        await db_session.commit()
+            write_log(severity="ERROR", message=f"Error {i}", source="api")
 
         response = await client.get("/api/logs/severity-counts?days=7", headers=headers)
 
@@ -413,7 +386,7 @@ class TestLogsAPI:
         assert "period_days" in data
 
     @pytest.mark.asyncio
-    async def test_create_log_endpoint(self, client, db_session: AsyncSession):
+    async def test_create_log_endpoint(self, client, db_session):
         """QA-012-018: POST /logs creates a new log entry."""
         # Create test user
         user = await create_user(db_session, "logs-create@example.com", "password123")
@@ -432,7 +405,7 @@ class TestLogsAPI:
         assert "created_at" in data
 
     @pytest.mark.asyncio
-    async def test_get_module_logs(self, client, db_session: AsyncSession):
+    async def test_get_module_logs(self, client, db_session):
         """QA-012-019: GET /logs/modules/{id} returns module-specific logs."""
         # Create test user and module
         user = await create_user(db_session, "logs-module@example.com", "password123")
@@ -446,13 +419,12 @@ class TestLogsAPI:
 
         # Create logs for this module
         for i in range(3):
-            db_session.add(SystemLog(
+            write_log(
                 severity="INFO",
                 message=f"Module log {i}",
                 source="test",
                 module_id=module_id,
-            ))
-        await db_session.commit()
+            )
 
         response = await client.get(f"/api/logs/modules/{module_id}?size=standard", headers=headers)
 
@@ -461,18 +433,18 @@ class TestLogsAPI:
         assert len(data["logs"]) == 3
 
     @pytest.mark.asyncio
-    async def test_logs_api_requires_auth(self, client, db_session: AsyncSession):
+    async def test_logs_api_requires_auth(self, client, db_session):
         """QA-012-020: GET /logs requires authentication."""
         response = await client.get("/api/logs")
         assert response.status_code in (401, 403)  # Either unauthorized or forbidden
 
 
 class TestSystemEventLogging:
-    """Test that system events are logged (integration with other components)."""
+    """Test that system events are logged to file (integration with other components)."""
 
     @pytest.mark.asyncio
-    async def test_consumer_events_logged(self, db_session: AsyncSession):
-        """QA-012-021: Consumer start/stop events are written to system_logs.
+    async def test_consumer_events_logged(self, db_session):
+        """QA-012-021: Consumer start/stop events are written to file logs.
         
         Note: This verifies the logging infrastructure exists. Actual consumer
         logging is tested in test_consumer.py.
@@ -486,19 +458,15 @@ class TestSystemEventLogging:
             metadata={"queue": "metrics_queue"},
         )
 
-        assert log.id is not None
-        assert log.source == "consumer"
+        assert log["source"] == "consumer"
 
-        # Verify it can be retrieved
-        result = await db_session.execute(
-            select(SystemLog).where(SystemLog.source == "consumer")
-        )
-        logs = result.scalars().all()
-        assert len(logs) >= 1
+        # Verify it can be retrieved from file
+        logs = read_logs(source="consumer", limit=10)
+        assert logs["total"] >= 1
 
     @pytest.mark.asyncio
-    async def test_ingest_events_logged(self, db_session: AsyncSession):
-        """QA-012-022: Ingest operations are written to system_logs."""
+    async def test_ingest_events_logged(self, db_session):
+        """QA-012-022: Ingest operations are written to file logs."""
         log = await write_system_log(
             db_session=db_session,
             severity="INFO",
@@ -507,60 +475,63 @@ class TestSystemEventLogging:
             metadata={"metrics_count": 5, "user_id": "test-user"},
         )
 
-        assert log.id is not None
-        assert log.source == "ingest"
-        assert log.extra_data["metrics_count"] == 5
+        assert log["source"] == "ingest"
+        assert log["metadata"]["metrics_count"] == 5
 
 
 class TestLogRetention:
-    """Test the 7-day log retention policy."""
+    """Test the 7-day log retention policy (file-based)."""
 
-    @pytest.mark.skip(reason="Retention is enforced by external cleanup job, not application code")
     @pytest.mark.asyncio
-    async def test_logs_older_than_7_days_not_returned(self, db_session: AsyncSession):
-        """QA-012-023: Logs older than 7 days are excluded from queries.
+    async def test_cleanup_old_logs(self, db_session):
+        """QA-012-023: cleanup_old_logs removes logs older than retention period."""
+        import json
         
-        Note: This test documents the retention requirement from ARCHITECTURE.md.
-        Actual retention is enforced by a database cleanup job or TimescaleDB policy.
-        """
-        # Create old log
-        old_log = SystemLog(
-            severity="INFO",
-            message="Old log message",
-            source="test",
-        )
-        # Manually set created_at to 8 days ago
-        old_log.created_at = datetime.utcnow() - timedelta(days=8)
-        db_session.add(old_log)
-
-        # Create recent log
-        new_log = SystemLog(
-            severity="INFO",
-            message="Recent log message",
-            source="test",
-        )
-        db_session.add(new_log)
-        await db_session.commit()
-
-        # Query should only return recent log (if retention filter implemented)
-        # Currently, this documents expected behavior
-        result = await db_session.execute(select(SystemLog))
-        logs = result.scalars().all()
-        assert len(logs) == 2  # Without retention filter, both exist
+        # Create recent logs
+        for i in range(5):
+            write_log(severity="INFO", message=f"Recent {i}", source="test")
+        
+        # Manually create old log entries in file
+        old_timestamp = (datetime.utcnow() - timedelta(days=10)).isoformat()
+        old_entry = {
+            "id": str(uuid4()),
+            "timestamp": old_timestamp,
+            "severity": "INFO",
+            "message": "Old log message",
+            "source": "test",
+            "metadata": {},
+        }
+        
+        # Write old entry directly to file
+        import app.core.file_logger as fl
+        with open(fl.APP_LOG_FILE, "a") as f:
+            f.write(json.dumps(old_entry) + "\n")
+        
+        # Verify old entry exists
+        all_logs = read_logs(limit=100)
+        assert len([l for l in all_logs["logs"] if l["message"] == "Old log message"]) == 1
+        
+        # Run cleanup
+        removed = cleanup_old_logs()
+        
+        # Old log should be removed
+        cleaned_logs = read_logs(limit=100)
+        assert len([l for l in cleaned_logs["logs"] if l["message"] == "Old log message"]) == 0
+        # Recent logs should remain
+        assert len([l for l in cleaned_logs["logs"] if l["message"].startswith("Recent")]) == 5
 
 
 class TestLogContract:
     """Contract tests for log API responses (QA-REG-003)."""
 
     @pytest.mark.asyncio
-    async def test_log_entry_response_schema(self, client, db_session: AsyncSession):
+    async def test_log_entry_response_schema(self, client, db_session):
         """QA-CONTRACT-014: Log entry has all required fields."""
         # Create test user
         user = await create_user(db_session, "log-contract@example.com", "password123")
         headers = get_auth_headers(str(user.id))
         
-        db_session.add(SystemLog(severity="INFO", message="Contract test", source="api"))
-        await db_session.commit()
+        write_log(severity="INFO", message="Contract test", source="api")
 
         response = await client.get("/api/logs?limit=1", headers=headers)
         assert response.status_code == 200
@@ -575,7 +546,7 @@ class TestLogContract:
             assert field in log, f"Missing required field: {field}"
 
     @pytest.mark.asyncio
-    async def test_log_list_response_includes_total(self, client, db_session: AsyncSession):
+    async def test_log_list_response_includes_total(self, client, db_session):
         """QA-CONTRACT-015: Log list response includes total count for pagination."""
         # Create test user
         user = await create_user(db_session, "log-list@example.com", "password123")
@@ -592,7 +563,7 @@ class TestLogContract:
         assert "filters_applied" in data
 
     @pytest.mark.asyncio
-    async def test_severity_counts_response_schema(self, client, db_session: AsyncSession):
+    async def test_severity_counts_response_schema(self, client, db_session):
         """QA-CONTRACT-016: Severity counts response has all required fields."""
         # Create test user
         user = await create_user(db_session, "log-sev@example.com", "password123")

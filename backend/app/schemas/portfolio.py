@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
+from uuid import UUID
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -29,8 +30,8 @@ class TransactionResponse(TransactionBase):
     """Schema for transaction response."""
     model_config = ConfigDict(from_attributes=True)
     
-    id: str
-    asset_id: str
+    id: UUID
+    asset_id: UUID
     total_value: Decimal
     created_at: datetime
 
@@ -61,8 +62,8 @@ class AssetResponse(AssetBase):
     """Schema for asset response."""
     model_config = ConfigDict(from_attributes=True)
     
-    id: str
-    module_id: str
+    id: UUID
+    module_id: UUID
     quantity: Decimal
     avg_buy_price: Decimal
     current_price: Decimal | None

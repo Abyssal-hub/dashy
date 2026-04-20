@@ -1,13 +1,11 @@
-"""Log module handler for system log viewing."""
+"""Log module handler for system log viewing - Now uses file-based logging."""
 
-from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules import ModuleHandler, register
-from app.models.log import SystemLog
+from app.core.file_logger import read_logs, get_severity_counts, APP_LOG_FILE
 
 
 @register("log")
@@ -28,6 +26,8 @@ class LogHandler(ModuleHandler):
     ) -> dict[str, Any]:
         """Return system log entries based on size preset.
         
+        Now reads from file-based logs for performance.
+        
         Size buckets:
         - compact: Last 5 log entries summary
         - standard: Last 20 log entries with severity icons
@@ -36,53 +36,45 @@ class LogHandler(ModuleHandler):
         Args:
             module_id: The module UUID
             size: Display size (compact, standard, expanded)
-            db_session: Database session for queries
+            db_session: Database session (kept for compatibility, not used)
             severity: Optional filter by severity (INFO, WARN, ERROR)
             source: Optional filter by source
         
         Returns:
             Log data including entries and metadata
         """
-        if db_session is None:
-            # Return placeholder if no session available
-            return {
-                "module_id": module_id,
-                "size": size,
-                "logs": [],
-                "total": 0,
-                "filters_applied": {
-                    "severity": severity,
-                    "source": source,
-                },
-                "severity_counts": {"INFO": 0, "WARN": 0, "ERROR": 0},
-                "retention_days": 7,
-            }
-        
         # Determine limit based on size
         limit = self._get_limit_for_size(size)
         
-        # Fetch logs
-        logs = await self._fetch_logs(
-            db_session,
-            limit=limit,
-            severity=severity,
+        # Fetch logs from file
+        result = read_logs(
+            log_file=APP_LOG_FILE,
+            severity=severity.upper() if severity else None,
             source=source,
+            limit=limit,
+            offset=0,
         )
         
-        # Get severity counts
-        severity_counts = await self._get_severity_counts(db_session)
+        # Get severity counts from file
+        severity_counts = get_severity_counts()
+        
+        # Add color coding for frontend
+        for entry in result["logs"]:
+            entry["severity_color"] = self._get_severity_color(entry.get("severity", "INFO"))
+            entry["created_at"] = entry.get("timestamp")
+            entry["metadata"] = entry.get("metadata", {})
         
         # Build response
         return {
             "module_id": module_id,
             "size": size,
-            "logs": [self._log_to_dict(log) for log in logs],
-            "total": len(logs),
+            "logs": result["logs"],
+            "total": result["total"],
             "filters_applied": {
                 "severity": severity,
                 "source": source,
             },
-            "severity_counts": severity_counts,
+            "severity_counts": severity_counts["counts"],
             "retention_days": 7,  # Per ARCHITECTURE.md
         }
     
@@ -97,71 +89,6 @@ class LogHandler(ModuleHandler):
             "large": 100,
         }
         return size_limits.get(size, 20)
-    
-    async def _fetch_logs(
-        self,
-        db_session: AsyncSession,
-        limit: int,
-        severity: str | None = None,
-        source: str | None = None,
-    ) -> list[SystemLog]:
-        """Fetch system logs with optional filtering.
-        
-        Returns logs in reverse chronological order (newest first).
-        """
-        query = select(SystemLog)
-        
-        # Apply severity filter if provided
-        if severity:
-            query = query.where(SystemLog.severity == severity.upper())
-        
-        # Apply source filter if provided
-        if source:
-            query = query.where(SystemLog.source == source)
-        
-        # Order by created_at descending (newest first)
-        query = query.order_by(desc(SystemLog.created_at))
-        
-        # Apply limit
-        query = query.limit(limit)
-        
-        result = await db_session.execute(query)
-        return list(result.scalars().all())
-    
-    async def _get_severity_counts(self, db_session: AsyncSession) -> dict[str, int]:
-        """Get count of logs by severity level."""
-        # Calculate cutoff for 7-day retention
-        cutoff = datetime.utcnow() - timedelta(days=7)
-        
-        query = select(SystemLog.severity, SystemLog.id).where(SystemLog.created_at >= cutoff)
-        result = await db_session.execute(query)
-        logs = result.scalars().all()
-        
-        # Count by severity using a simple query
-        severity_query = select(SystemLog.severity).where(SystemLog.created_at >= cutoff)
-        severity_result = await db_session.execute(severity_query)
-        severities = severity_result.scalars().all()
-        
-        counts = {"INFO": 0, "WARN": 0, "ERROR": 0}
-        for sev in severities:
-            if sev in counts:
-                counts[sev] += 1
-        
-        return counts
-    
-    def _log_to_dict(self, log: SystemLog) -> dict[str, Any]:
-        """Convert SystemLog to dictionary."""
-        return {
-            "id": str(log.id),
-            "severity": log.severity,
-            "message": log.message,
-            "source": log.source,
-            "metadata": log.extra_data,
-            "module_id": str(log.module_id) if log.module_id else None,
-            "created_at": log.created_at.isoformat() if log.created_at else None,
-            # Add color coding hint for frontend
-            "severity_color": self._get_severity_color(log.severity),
-        }
     
     def _get_severity_color(self, severity: str) -> str:
         """Get color code for severity level (for frontend display)."""
@@ -204,33 +131,21 @@ async def write_system_log(
     source: str = "system",
     metadata: dict | None = None,
     module_id: str | None = None,
-) -> SystemLog:
-    """Write a system log entry to the database.
+) -> None:
+    """Write a system log entry to file.
     
-    This function is used by other parts of the application to log
-    critical events that should be viewable in the log module.
+    DEPRECATED: Kept for backwards compatibility.
+    Use app.core.file_logger.write_log() directly instead.
     
-    Args:
-        db_session: Database session
-        severity: Log severity (INFO, WARN, ERROR)
-        message: Log message
-        source: Log source (e.g., "ingest", "api", "scheduler")
-        metadata: Optional JSON-serializable metadata
-        module_id: Optional associated module ID
-    
-    Returns:
-        The created SystemLog entry
+    This function is kept to avoid breaking existing code that calls it.
+    It now writes to file instead of database.
     """
-    log_entry = SystemLog(
+    from app.core.file_logger import write_log
+    
+    write_log(
         severity=severity.upper(),
         message=message,
         source=source,
-        extra_data=metadata or {},
+        metadata=metadata or {},
         module_id=module_id,
     )
-    
-    db_session.add(log_entry)
-    await db_session.commit()
-    await db_session.refresh(log_entry)
-    
-    return log_entry

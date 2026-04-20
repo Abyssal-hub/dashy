@@ -98,9 +98,8 @@ async def ingest_metrics(
             },
         )
     
-    # Log successful ingest to system logs
+    # Log successful ingest to system logs (file-based)
     await write_system_log(
-        db_session=db_session,
         severity="INFO",
         message=f"Metrics ingested: {queued} queued for user {current_user}",
         source="ingest",
@@ -205,9 +204,8 @@ async def ingest_events(
             },
         )
     
-    # Log successful ingest to system logs
+    # Log successful ingest to system logs (file-based)
     await write_system_log(
-        db_session=db_session,
         severity="INFO",
         message=f"Events ingested: {queued} queued for user {current_user}",
         source="ingest",
