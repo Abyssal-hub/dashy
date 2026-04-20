@@ -5,7 +5,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules import ModuleHandler, register
-from app.core.file_logger import read_logs, get_severity_counts, APP_LOG_FILE
+from app.core.file_logger import read_logs, get_severity_counts
 
 
 @register("log")
@@ -45,6 +45,9 @@ class LogHandler(ModuleHandler):
         """
         # Determine limit based on size
         limit = self._get_limit_for_size(size)
+        
+        # Import APP_LOG_FILE dynamically to respect test fixtures
+        from app.core.file_logger import APP_LOG_FILE
         
         # Fetch logs from file
         result = read_logs(

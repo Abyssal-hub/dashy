@@ -18,7 +18,6 @@ from app.core.file_logger import (
     write_interaction_log,
     read_logs,
     get_severity_counts as get_file_severity_counts,
-    APP_LOG_FILE,
 )
 
 router = APIRouter(prefix="/logs", tags=["logs"])
@@ -80,6 +79,7 @@ async def list_logs(
         await _verify_module_access(module_id, user_id, db_session)
     
     # Read from file-based logs
+    from app.core.file_logger import APP_LOG_FILE
     result = read_logs(
         log_file=APP_LOG_FILE,
         severity=severity,
@@ -212,6 +212,7 @@ async def get_module_logs(
     await _verify_module_access(module_id, user_id, db_session)
     
     # Read from file-based logs instead of handler
+    from app.core.file_logger import APP_LOG_FILE
     result = read_logs(
         log_file=APP_LOG_FILE,
         severity=severity,
