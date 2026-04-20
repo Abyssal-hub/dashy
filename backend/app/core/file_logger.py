@@ -265,7 +265,7 @@ def get_severity_counts(days: int = 7) -> dict[str, Any]:
 
 def cleanup_old_logs():
     """Remove log entries older than RETENTION_DAYS."""
-    cutoff = datetime.utcnow() - timedelta(days=RETENTION_DAYS)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)
     
     for log_file in [APP_LOG_FILE, INTERACTION_LOG_FILE, ERROR_LOG_FILE]:
         if not Path(log_file).exists():

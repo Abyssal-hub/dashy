@@ -147,7 +147,8 @@ class TestRedisQueue:
         queue_data = await redis_client.lpop("metrics_queue")
         assert queue_data is not None
         parsed = json.loads(queue_data)
-        assert parsed["items"][0]["symbol"] == "TEST"
+        assert parsed["metric_name"] == "test_metric"
+        assert parsed["type"] == "metric"
 
 
 class TestConsumerPipeline:

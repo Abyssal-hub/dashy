@@ -492,7 +492,7 @@ class TestLogRetention:
             write_log(severity="INFO", message=f"Recent {i}", source="test")
         
         # Manually create old log entries in file
-        old_timestamp = (datetime.utcnow() - timedelta(days=10)).isoformat()
+        old_timestamp = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
         old_entry = {
             "id": str(uuid4()),
             "timestamp": old_timestamp,
