@@ -13,7 +13,7 @@ Related: DEV-012, QA-REG-003
 import pytest
 import tempfile
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4, UUID
 from pathlib import Path
 
