@@ -163,7 +163,7 @@ def write_interaction_log(
 
 
 def read_logs(
-    log_file: Path = APP_LOG_FILE,
+    log_file: Path | None = None,
     severity: Literal["INFO", "WARN", "ERROR"] | None = None,
     source: str | None = None,
     limit: int = 20,
@@ -172,7 +172,7 @@ def read_logs(
     """Read logs from a log file with optional filtering.
     
     Args:
-        log_file: Path to the log file to read
+        log_file: Path to the log file to read (defaults to current APP_LOG_FILE)
         severity: Filter by severity level
         source: Filter by source
         limit: Maximum number of logs to return
@@ -181,6 +181,10 @@ def read_logs(
     Returns:
         Dict with logs list, total count, and pagination info
     """
+    # Resolve default at call time to respect test fixtures
+    if log_file is None:
+        log_file = APP_LOG_FILE
+    
     if not log_file.exists():
         return {
             "logs": [],

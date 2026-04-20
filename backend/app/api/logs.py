@@ -128,6 +128,9 @@ async def create_log(
         module_id=str(module_id) if module_id else None,
     )
     
+    # Add created_at alias for API compatibility
+    log_entry["created_at"] = log_entry.get("timestamp")
+    
     return log_entry
 
 

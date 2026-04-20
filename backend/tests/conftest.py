@@ -55,6 +55,12 @@ async def db_session(db_engine) -> AsyncSession:
 
 
 @pytest_asyncio.fixture
+async def redis_client(client):
+    """Provide the test Redis client from the client fixture."""
+    return client.test_redis
+
+
+@pytest_asyncio.fixture
 async def client(db_engine, redis_container):
     """Create test client with real DB and Redis."""
     app = create_app()

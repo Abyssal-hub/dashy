@@ -22,6 +22,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.auth.service import create_user, create_access_token
 from app.services.redis_client import get_redis_client
 from app.models.log import SystemLog
+from app.core.file_logger import read_logs
+import app.core.file_logger as file_logger
 
 
 def get_auth_headers(user_id: str) -> dict:
@@ -217,15 +219,12 @@ class TestIngestMetrics:
 
         assert response.status_code == 202
 
-        # Verify system log was created
-        result = await db_session.execute(
-            select(SystemLog).where(SystemLog.source == "ingest")
-        )
-        logs = result.scalars().all()
+        # Verify system log was created (file-based)
+        logs = read_logs(source="ingest", limit=10)
         
         # Should have at least one ingest log
-        assert len(logs) >= 1
-        assert any("Metrics ingested" in log.message for log in logs)
+        assert logs["total"] >= 1
+        assert any("Metrics ingested" in log["message"] for log in logs["logs"])
 
     @pytest.mark.asyncio
     async def test_ingest_metrics_requires_auth(self, client):
@@ -464,13 +463,10 @@ class TestIngestEvents:
 
         assert response.status_code == 202
 
-        # Verify system log was created
-        result = await db_session.execute(
-            select(SystemLog).where(SystemLog.source == "ingest")
-        )
-        logs = result.scalars().all()
+        # Verify system log was created (file-based)
+        logs = read_logs(source="ingest", limit=10)
         
-        assert any("Events ingested" in log.message for log in logs)
+        assert any("Events ingested" in log["message"] for log in logs["logs"])
 
     @pytest.mark.asyncio
     async def test_ingest_events_requires_auth(self, client):

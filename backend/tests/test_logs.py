@@ -23,8 +23,8 @@ from app.core.file_logger import (
     read_logs,
     get_severity_counts,
     cleanup_old_logs,
-    APP_LOG_FILE,
 )
+import app.core.file_logger as file_logger
 from app.modules.handlers.log import LogHandler, write_system_log
 from app.services.auth.service import create_user, create_access_token
 
@@ -251,7 +251,7 @@ class TestWriteSystemLog:
             module_id=module_id,
         )
 
-        assert log["metadata"]["module_id"] == module_id
+        assert log["module_id"] == module_id
 
 
 class TestLogsAPI:

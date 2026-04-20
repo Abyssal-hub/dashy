@@ -22,9 +22,8 @@ from app.core.file_logger import (
     write_log,
     write_interaction_log,
     read_logs,
-    INTERACTION_LOG_FILE,
-    APP_LOG_FILE,
 )
+import app.core.file_logger as file_logger
 from app.services.auth.service import create_user, create_access_token
 from app.schemas.interaction import InteractionLogCreate, InteractionTarget
 
