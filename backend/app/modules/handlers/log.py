@@ -125,24 +125,32 @@ class LogHandler(ModuleHandler):
 
 
 async def write_system_log(
-    db_session: AsyncSession,
     severity: str,
     message: str,
     source: str = "system",
     metadata: dict | None = None,
     module_id: str | None = None,
-) -> None:
+    db_session: Any = None,  # Kept for backwards compatibility, not used
+) -> dict[str, Any]:
     """Write a system log entry to file.
     
     DEPRECATED: Kept for backwards compatibility.
     Use app.core.file_logger.write_log() directly instead.
     
-    This function is kept to avoid breaking existing code that calls it.
-    It now writes to file instead of database.
+    Args:
+        severity: Log severity (INFO, WARN, ERROR)
+        message: Log message
+        source: Log source (default: "system")
+        metadata: Optional metadata dict
+        module_id: Optional module ID
+        db_session: Deprecated, kept for backwards compatibility
+    
+    Returns:
+        The log entry dict that was written
     """
     from app.core.file_logger import write_log
     
-    write_log(
+    return write_log(
         severity=severity.upper(),
         message=message,
         source=source,
