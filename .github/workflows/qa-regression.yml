@@ -125,7 +125,7 @@ jobs:
   launch-script-test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [backend-tests]
+    needs: [backend-unit-tests]
     
     steps:
       - uses: actions/checkout@v4
