@@ -697,7 +697,8 @@
             try {
                 const response = await api(`/modules/${module.id}/data`);
                 if (!response.ok) throw new Error('Failed to fetch portfolio');
-                const data = await response.json();
+                const responseData = await response.json();
+                const data = responseData.data || {};
                 const totalValue = data.total_value || 0;
                 const change = data.change_24h || 0;
                 const changeClass = change >= 0 ? 'text-status-online' : 'text-status-critical';
@@ -746,7 +747,8 @@
             try {
                 const response = await api(`/modules/${module.id}/data`);
                 if (!response.ok) throw new Error('Failed to fetch calendar');
-                const data = await response.json();
+                const responseData = await response.json();
+                const data = responseData.data || {};
                 const events = data.events || [];
                 const upcoming = events.filter(e => new Date(e.event_date) >= new Date());
                 const nextEvent = upcoming[0];
@@ -804,7 +806,8 @@
             try {
                 const response = await api(`/modules/${module.id}/data`);
                 if (!response.ok) throw new Error('Failed to fetch logs');
-                const data = await response.json();
+                const responseData = await response.json();
+                const data = responseData.data || {};
                 const logs = data.logs || [];
                 const total = data.total || logs.length;
 
