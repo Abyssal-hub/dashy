@@ -309,7 +309,7 @@
                     <div class="text-sm font-medium text-white truncate">User</div>
                     <div class="text-xs text-gray-500 truncate">Online</div>
                 </div>
-                <button onclick="logout()" class="w-8 h-8 rounded-lg hover:bg-dark-700 flex items-center justify-center text-gray-400 hover:text-white transition">
+                <button id="logout-btn" aria-label="Sign out" class="w-8 h-8 rounded-lg hover:bg-dark-700 flex items-center justify-center text-gray-400 hover:text-white transition">
                     <i class="fas fa-sign-out-alt text-sm"></i>
                 </button>
             </div>
@@ -355,7 +355,7 @@
             <div class="max-w-7xl mx-auto">
                 <!-- Add Module Button (always visible) -->
                 <div class="flex justify-end mb-6">
-                    <button onclick="openAddModuleModal()" class="btn-primary text-white px-4 py-2.5 rounded-xl transition flex items-center space-x-2">
+                    <button id="add-module-btn-header" aria-label="Add new module" class="btn-primary text-white px-4 py-2.5 rounded-xl transition flex items-center space-x-2">
                         <i class="fas fa-plus"></i>
                         <span>Add Module</span>
                     </button>
@@ -372,7 +372,7 @@
                     </div>
                     <h2 class="text-2xl font-semibold text-white mb-2">No modules yet</h2>
                     <p class="text-gray-500 mb-6">Add your first module to get started</p>
-                    <button onclick="openAddModuleModal()" class="btn-primary text-white px-6 py-3 rounded-xl transition">
+                    <button id="add-module-btn-empty" aria-label="Add your first module" class="btn-primary text-white px-6 py-3 rounded-xl transition">
                         <i class="fas fa-plus mr-2"></i>Add Your First Module
                     </button>
                 </div>
@@ -538,8 +538,8 @@
                 </form>
             </div>
             <div class="p-6 border-t border-white/5 flex justify-end space-x-3">
-                <button onclick="closeAddModuleModal()" class="px-5 py-2.5 text-gray-400 hover:text-white transition">Cancel</button>
-                <button onclick="submitAddModule()" class="btn-primary text-white px-6 py-2.5 rounded-xl transition">Add Module</button>
+                <button id="modal-cancel-btn" class="px-5 py-2.5 text-gray-400 hover:text-white transition">Cancel</button>
+                <button id="modal-add-btn" class="btn-primary text-white px-6 py-2.5 rounded-xl transition">Add Module</button>
             </div>
         </div>
     </div>
@@ -887,10 +887,10 @@
                                 <i class="fas ${getIcon(module.module_type)} text-accent-purple"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-white">${module.name}</h3>
+                                <h3 class="font-semibold text-white">${escapeHtml(module.name)}</h3>
                                 <p class="text-xs text-gray-500 capitalize flex items-center space-x-2">
                                     <span class="w-1.5 h-1.5 rounded-full bg-status-online status-dot"></span>
-                                    <span>${module.module_type}</span>
+                                    <span>${escapeHtml(module.module_type)}</span>
                                 </p>
                             </div>
                         </div>
@@ -1021,7 +1021,12 @@
             }
         });
 
-        // Load on startup
+        // Attach event listeners (no inline onclick per frontend conventions)
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('add-module-btn-header').addEventListener('click', openAddModuleModal);
+        document.getElementById('add-module-btn-empty').addEventListener('click', openAddModuleModal);
+        document.getElementById('modal-cancel-btn').addEventListener('click', closeAddModuleModal);
+        document.getElementById('modal-add-btn').addEventListener('click', submitAddModule);
         loadModules();
     </script>
 </body>
