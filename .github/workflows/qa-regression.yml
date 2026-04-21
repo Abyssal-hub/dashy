@@ -11,7 +11,7 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
-  backend-tests:
+  backend-unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     
@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests (exclude E2E and launch tests)
+      - name: Run unit + integration tests (exclude E2E)
         working-directory: ./backend
         env:
           SECRET_KEY: ci-test-secret-key
@@ -37,8 +37,36 @@ jobs:
           ACCESS_TOKEN_EXPIRE_MINUTES: 15
           REFRESH_TOKEN_EXPIRE_DAYS: 7
         run: |
-          # Exclude E2E tests (run in separate job) and launch script tests (require Docker Compose)
           pytest tests/ -v --tb=short -m "not e2e" --ignore=tests/test_launch_script.py --ignore=tests/test_launch_stack.py
+
+  backend-e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend-unit-tests]
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run E2E tests
+        working-directory: ./backend
+        env:
+          SECRET_KEY: ci-test-secret-key
+          ALGORITHM: HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES: 15
+          REFRESH_TOKEN_EXPIRE_DAYS: 7
+        run: |
+          pytest tests/ -v --tb=short -m e2e
 
   docker-build:
     runs-on: ubuntu-latest
