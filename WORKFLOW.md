@@ -1,457 +1,203 @@
-# Team Workflow: Personal Monitoring Dashboard
+# Development Workflow
 
-**Version:** 2.0  
-**Effective Date:** 2026-04-20  
-**Worker:** Abyssal Droid Agent
-
----
-
-## Worker: Abyssal Droid Agent
-
-A single agent that changes role according to the stage of work. No other workers exist.
-
-### Role: Architect (Lead)
-**When:** Task planning, architecture design, specification conflicts, phase gates  
-**Responsibilities:**
-- Defines technical architecture in `ARCHITECTURE.md`
-- Assigns tasks and manages workflow via `TASKS.md`
-- Reviews structural code changes
-- Resolves specification conflicts
-- Owns `DECISIONS.md` and `TASKS.md`
-- Decides when to switch to Developer role
-
-### Role: Developer
-**When:** Implementation, coding, writing unit tests  
-**Responsibilities:**
-- Implements features per `ARCHITECTURE.md` spec
-- Writes unit tests for implemented code
-- **Cannot modify tests** — tests are the specification
-- Reports blockers to Architect (self-report, then switch role)
-- Commits and pushes per milestone
-- Decides when to switch to QA role for validation
-
-### Role: QA
-**When:** Testing, validation, defect filing, regression runs  
-**Responsibilities:**
-- Validates correctness and edge cases
-- **Can modify tests** when expectations are wrong
-- Files defects in `DEFECTS.md`
-- Only signs off when 100% of tests pass
-- Executes regression test suite
-- Decides when to switch back to Developer (if defects) or Architect (if done)
-
-### Role: UI/UX Designer
-**When:** Design tasks, frontend wireframes, component libraries  
-**Responsibilities:**
-- Designs user interfaces and experiences
-- Creates wireframes, mockups, and prototypes
-- Defines visual design systems and component libraries
-- Ensures accessibility and usability standards
-- Reviews frontend implementations for design fidelity
-- Updates design documentation
+**Project:** Personal Monitoring Dashboard  
+**Reference:** `ARCHITECTURE.md` is the single source of truth. All work must align with architecture decisions.
 
 ---
 
-## 1. Work Artifacts
+## 1. Roles & Responsibilities
 
-### 1.1 Single Source of Truth
-| Artifact | Location | Role | Purpose |
-|----------|----------|------|---------|
-| **Architecture** | `ARCHITECTURE.md` | Architect | Technical blueprint. All implementation references this. |
-| **Workflow** | `WORKFLOW.md` (this file) | Architect | How the agent works across roles. |
-| **Task Board** | `TASKS.md` | Architect | Active work items, assignments, status. |
-| **Decision Log** | `DECISIONS.md` | Architect | Why decisions were made. Updated when architecture changes. |
-| **Defect Tracker** | `DEFECTS.md` | QA | Bug reports, reproduction steps, resolution status. |
+**All team members are senior practitioners with 30+ years of experience in their domain and deep expertise in collaborative web-application delivery.**
 
-### 1.2 Artifact Rules
-- **Never work from memory.** If it is not in `ARCHITECTURE.md`, it does not exist.
-- **Architect updates `ARCHITECTURE.md` first.** Then proceeds to Developer role.
-- **Developer and QA can suggest changes** via comments, but Architect approves and writes the change.
+| Role | Experience Level | Can Modify Tests? | Core Responsibility |
+|------|------------------|-------------------|---------------------|
+| **Developer** | Senior (30+ years software engineering) | ❌ NO | Implement features per architecture. Tests are the specification. |
+| **UI/UX Designer** | Senior (30+ years product design) | ❌ NO | Design user flows, define UX requirements, review E2E scenarios. |
+| **QA** | Senior (30+ years quality engineering) | ✅ YES | Write/update tests. Fix test expectations when they are incorrect. |
+| **Architect** | Senior (30+ years systems architecture) | ✅ YES | Resolve specification conflicts. Approve architecture changes. |
 
 ---
 
-## 2. Task Lifecycle
+## 2. Workflow by Work Type
 
-### 2.1 Task States
+### 2.1 Backend-Only Work
+
 ```
-BACKLOG → ASSIGNED → IN_PROGRESS → IN_REVIEW → DONE
-                ↓           ↓
-             BLOCKED     DEFECTS_FOUND
-                ↓           ↓
-           UNBLOCKED ← FIXED ←
+Ticket Created → Developer implements → Developer writes unit tests
+                    ↓
+              QA writes integration tests (if new endpoint/contract)
+                    ↓
+              All tests pass → Merge
 ```
 
-### 2.2 State Definitions
-| State | Meaning | Role |
-|-------|---------|------|
-| **BACKLOG** | Work identified but not assigned | Architect |
-| **ASSIGNED** | Task ready to start | Architect |
-| **IN_PROGRESS** | Work actively being done | Developer/QA/Designer |
-| **BLOCKED** | Cannot proceed without input | Any |
-| **UNBLOCKED** | Blocker resolved | Architect |
-| **IN_REVIEW** | Deliverable complete, ready for review | Developer/QA |
-| **DEFECTS_FOUND** | Validation found issues | QA |
-| **FIXED** | Defects addressed | Developer |
-| **DONE** | Accepted by Architect, merged | Architect |
+**Rules:**
+- Developer writes unit tests for new handlers/services.
+- QA writes integration tests for new API contracts.
+- Architecture compliance is verified by existing tests.
 
-### 2.3 Task ID Format
-- `ARCH-XXX`: Architecture tasks (blueprint updates)
-- `DEV-XXX`: Development tasks (code implementation)
-- `QA-XXX`: QA tasks (test writing, validation)
-- `DEF-XXX`: Defects (bug reports)
-- `UI-XXX`: UI/UX tasks (design, mockups, component libraries)
+### 2.2 Frontend Work — **REQUIRES UI/UX + ARCHITECT + QA COLLABORATION**
+
+```
+Ticket Created → UI/UX designs flow + discusses feasibility with Architect
+         ↓                                    ↓
+    Architecture review ← ← ← ← ← ← ← ← ← ← ←
+         ↓
+    QA drafts E2E user journey tests
+         ↓
+    Developer implements frontend
+         ↓
+    E2E tests must pass before merge
+         ↓
+    All tests pass → Merge
+```
+
+**Rules (NEW REQUIREMENT):**
+1. **UI/UX Designer** defines the user flow, then **discusses feasibility with the Architect** before finalizing designs.
+   - If the flow requires new data models, API endpoints, or architectural changes, the Architect decides if it's feasible.
+   - If the architecture can't support the UX flow, UI/UX and Architect iterate together until they agree.
+2. **QA** writes E2E user journey tests covering the flow before or alongside implementation.
+3. **Developer** implements frontend following the **architecture blueprint** (`ARCHITECTURE.md`).
+4. **E2E tests are the definition of done** — if the test passes, the feature is complete.
+5. **Developer never modifies E2E tests** to make code pass. If tests fail due to wrong expectations, escalate to QA.
+
+### 2.3 Bug Fix / Defect Work
+
+```
+Defect Reported → QA reproduces → Developer fixes
+                        ↓
+                  Regression test added by QA
+                        ↓
+                  All tests pass → Merge
+```
+
+**Rules:**
+- Every defect gets a regression test before merge.
+- Developer does not modify existing tests.
 
 ---
 
-## 3. Daily Workflow
+## 3. E2E Test Requirements for Frontend Work
 
-### 3.1 Morning Assignment (Architect)
-```
-Architect reviews TASKS.md
-         ↓
-[For each ready task]
-         ↓
-Architect selects task and switches to appropriate role
-         ↓
-Work begins
-```
+### 3.1 When E2E Tests Are Required
 
-### 3.2 Role-Specific Execution
+Any work touching the **frontend** MUST include E2E user journey tests:
 
-**As Architect:**
-- Plan and define the task
-- Update `ARCHITECTURE.md` if needed
-- Update `TASKS.md` with clear deliverables
-- Switch to Developer, QA, or Designer role as needed
+- New module type added
+- Module rendering changes
+- Dashboard layout changes
+- New user-facing feature
+- Data flow changes (how frontend consumes backend)
+- Authentication/authorization flow changes
 
-**As Developer:**
-```
-Pick up ASSIGNED task
-         ↓
-Move to IN_PROGRESS (update TASKS.md)
-         ↓
-Implement / Test per ARCHITECTURE.md spec
-         ↓
-[If ambiguity found]
-         ↓
-Switch to Architect role, report BLOCKER with specific question
-         ↓
-[If completed]
-         ↓
-Move to IN_REVIEW, switch to QA role for validation
-```
+### 3.2 E2E Test Must Cover
 
-**As QA:**
-```
-Receive work from Developer (self handoff)
-         ↓
-Execute test plan
-         ↓
-[If defects found OR tests fail]
-         ↓
-Do NOT sign off
-File DEF in DEFECTS.md
-Move DEV task to DEFECTS_FOUND
-Switch to Developer role to fix
-         ↓
-Developer fixes, moves to FIXED
-Switch back to QA role and retest
-         ↓
-[If tests pass]
-         ↓
-QA marks task DONE
-Switch to Architect role for merge/close
-```
+Per the UX designer audit, E2E tests must validate:
 
-**As UI/UX Designer:**
-```
-Receive design task
-         ↓
-Create wireframes/mockups/prototypes
-         ↓
-Update design documentation
-         ↓
-Switch to Developer role for implementation
-or switch to QA role for design review
-```
+| Category | Scenarios |
+|----------|-----------|
+| **Happy Path** | Full user journey: signup → add modules → populate data → verify live data |
+| **Empty State** | Module with no data shows helpful state, not blank box |
+| **Error State** | API failures show friendly messages, not raw JSON/traceback |
+| **Data Consistency** | Auto-refresh does not break DOM structure |
+| **Responsive Density** | Different module sizes return appropriate data amounts |
+| **State Persistence** | Refresh, resize, reposition — all survive browser reload |
+| **Security** | Cross-user isolation, token expiry, unauthorized access |
+| **Performance** | Large datasets load within acceptable time |
+| **Config Updates** | Changes reflect immediately without page refresh |
 
-### 3.3 Review Cycle
+### 3.3 E2E Test Template
 
-**Rule:** If QA tests fail, QA does NOT sign off. Production cycle repeats and goes back to Developer.
+See existing tests for patterns:
+- `tests/test_mvp_flows.py` — Core user flows
+- `tests/test_def020_def021_e2e.py` — Full user journey with real data
+- `tests/test_ux_scenarios_e2e.py` — UX edge cases and error states
 
-**CRITICAL: QA only signs off when 100% of tests pass. No partial sign-offs allowed.**
-
-**Test Ownership Rules (from DEF-002):**
-- **Developer:** Cannot modify tests. Tests are the specification.
-- **QA:** CAN modify tests when test expectations are wrong/incorrect.
-- **Architect:** Resolves specification conflicts when tests contradict each other.
-
-When tests fail:
-1. Developer fixes application code (NOT tests)
-2. If test expectations are wrong, QA fixes the tests
-3. If there's a conflict between test files, Architect decides which is correct
+**Every E2E test must:**
+1. Follow a real user UX flow (not just API calls)
+2. Populate with real data (not hardcoded placeholders)
+3. Verify the API returns values computed from the database
+4. Assert on the full response structure (not just status code)
 
 ---
 
-## 4. Communication Protocols
+## 4. Architecture Compliance
 
-### 4.1 Role Switch Messages
+### 4.1 Frontend Must Follow Architecture Blueprint
 
-**Architect → Developer (New Task):**
-```
-ROLE SWITCH: Architect → Developer
-TASK: DEV-001
-PRIORITY: P1 (blocking other work) / P2 (normal) / P3 (nice to have)
-SOURCE: ARCHITECTURE.md Section X.Y
-DELIVERABLE: [Specific output expected]
-ACCEPTANCE CRITERIA:
-- [ ] Criterion 1
-- [ ] Criterion 2
-KNOWN ISSUES: [Any anticipated challenges]
-BLOCKERS: None / Waiting on TASK-XXX
-DEADLINE: [Date or relative to other tasks]
-```
+**Before implementing frontend work:**
 
-**Developer → Architect (Blocked):**
-```
-ROLE SWITCH: Developer → Architect
-BLOCKER: DEV-001
-ISSUE: [Specific problem]
-TRIED: [What you already attempted]
-OPTIONS CONSIDERED:
-A. [Option A with pros/cons]
-B. [Option B with pros/cons]
-RECOMMENDATION: [Which option you prefer and why]
-```
+1. Read `ARCHITECTURE.md` Section 4 (Frontend Architecture)
+2. Read `ARCHITECTURE.md` Section 6 (Data Models) — database fields will be in API responses
+3. Verify with existing API code — see actual response structures
+4. Check `ARCHITECTURE.md` decisions — they capture deliberate trade-offs
 
-**Developer → QA (Complete):**
-```
-ROLE SWITCH: Developer → QA
-COMPLETE: DEV-001
-DELIVERABLE: [What was built]
-LOCATION: [File paths, URLs]
-NOTES: [Where architecture was unclear, suggestions for improvement]
-READY FOR: QA validation
-```
+**Golden Rule:** Architecture is the single source of truth. Frontend implementation must follow it; tests verify compliance.
 
-**QA → Developer (Defect):**
-```
-ROLE SWITCH: QA → Developer
-DEFECT: DEF-001
-RELATED TO: DEV-001
-SEVERITY: Blocker / Major / Minor / Cosmetic
-SUMMARY: [One-line description]
-REPRODUCTION STEPS:
-1. [Step 1]
-2. [Step 2]
-EXPECTED: [What should happen per ARCHITECTURE.md]
-ACTUAL: [What actually happened]
-EVIDENCE: [Logs, screenshots, API responses]
-```
+### 4.2 Frontend-Backend Contract
 
-**QA → Architect (Sign-off):**
-```
-ROLE SWITCH: QA → Architect
-SIGN-OFF: DEV-001
-QA TASK: QA-001
-RESULT: PASS / PASS WITH NOTES / FAIL (DEF-XXX filed)
-NOTES: [Any observations not defects]
-```
+The contract is defined in `ARCHITECTURE.md` Section 12 (API Contract):
 
-### 4.2 Response Time Expectations
-| Scenario | Response Time |
-|----------|---------------|
-| Blocker reported | 4 hours (same day) |
-| Task completion | 24 hours (next review cycle) |
-| Defect filed | Next work session (Developer picks up) |
-| Architecture question | 4 hours (same day) |
+- `GET /api/modules/{id}/data` returns structured data per module type
+- `PortfolioHandler` returns `assets[]`, `total_value`, `day_change`, etc.
+- `CalendarHandler` returns `events[]` with time ranges
+- `LogHandler` returns `logs[]`, `severity_counts`, pagination metadata
+
+**Frontend must consume this contract.** Bypassing it (e.g., calling `GET /api/logs` directly) creates technical debt.
+
+### 4.3 Why UI/UX Must Discuss with the Architect
+
+**Real examples from this project where UI/UX + Architect collaboration was critical:**
+
+| Scenario | UI/UX Wanted | Architecture Said | Resolution |
+|----------|-------------|-------------------|------------|
+| Portfolio drag-to-reorder | Drag cards between grid positions | `ARCHITECTURE.md` Section 6.1: modules table has `position_x`, `position_y`, `width`, `height` columns | Feasible — already supported |
+| Log module live updates | Show new logs streaming in without refresh | Backend `GET /api/modules/{id}/data` exists but `LogHandler` returned hardcoded empty data | Backend handler needed fixing before frontend could consume real data |
+| Calendar 7-day vs 365-day view | Different data density at different sizes | `CalendarHandler` didn't accept `size` parameter | Added size-aware date range filtering |
+| Cross-user data leak | User A and User B have same-named modules | `ARCHITECTURE.md` uses `user_id` scoped queries but frontend was bypassing `/modules/{id}/data` | Enforced contract compliance |
+
+**Rule:** UI/UX must validate their designs against the architecture before implementation. If the architecture can't support the flow, **either the architecture changes (Architect approves) or the UI/UX adapts (Designer agrees)** — never the Developer hacking around it.
+
+**Anti-pattern:** UI/UX designs a drag-and-drop dashboard layout without checking if the database stores coordinates. Developer ends up storing layout in `localStorage` instead of the database, creating data loss on refresh.
 
 ---
 
-## 5. Review Checkpoints
+## 5. Test Ownership Matrix
 
-### 5.1 Architect Review (Post-Development)
-**Purpose:** Ensure code structure matches architecture.  
-**Not:** Line-by-line code review (QA handles correctness).
+| Test Type | Written By | Can Modify |
+|-----------|-----------|------------|
+| Unit Tests | Developer | Developer |
+| Integration Tests | QA (+ Developer support) | QA |
+| E2E Tests | QA | QA |
+| Regression Tests | QA | QA |
 
-**Checklist:**
-- [ ] Does the API match the spec in ARCHITECTURE.md?
-- [ ] Are database schema changes approved and documented?
-- [ ] Does the module follow the handler registry pattern?
-- [ ] Are external APIs wrapped with circuit breaker logic?
-- [ ] Are secrets properly externalized (not hardcoded)?
-- [ ] Is logging implemented per Section 11.2?
-
-**Timebox:** 15 minutes per task.
-
-### 5.2 QA Review (Validation)
-**Purpose:** Verify correctness, edge cases, and spec compliance.
-
-**Checklist:**
-- [ ] Happy path works (normal input, expected output)
-- [ ] Edge cases handled (empty data, malformed input, timeouts)
-- [ ] Error messages are clear
-- [ ] Data retention policies are enforced
-- [ ] Alert rules trigger correctly
-- [ ] Frontend displays stale data indicators correctly
-
-**Deliverable:** Test report with PASS/FAIL per criterion.
-
-### 5.3 Phase Gate Reviews
-
-**After Module Completion:**
-1. Developer delivers module
-2. Architect reviews structure (switch to Architect role)
-3. QA validates thoroughly (switch to QA role)
-4. Architect merges to main (switch to Architect role)
-5. Update `DECISIONS.md` if any in-flight changes were made
-
-**After First Iteration (Project-Wide):**
-1. Architect schedules retrospective
-2. Review: What worked, what did not, what was unclear
-3. Revise `ARCHITECTURE.md` based on lessons learned
-4. Update `WORKFLOW.md` if process gaps found
-5. Plan Phase 2 (if applicable)
+**Escalation Rule:** If a test fails and the developer believes the expectation is wrong, escalate to QA. QA decides whether to fix the test or file a defect.
 
 ---
 
-## 6. Exception Handling
+## 6. Definition of Done
 
-### 6.1 Scope Change Mid-Task
-**Rule:** Developer stops work immediately. Switches to Architect role to report.  
-**Architect decides:**
-- A. Complete task as-is, new work becomes new task
-- B. Revise task scope, update acceptance criteria
-- C. Cancel task, remove from backlog
+For **frontend work**, the definition of done is:
 
-### 6.2 Architecture Proven Wrong
-**Rule:** Developer stops, switches to Architect role, reports specific flaw.  
-**Architect:**
-1. Acknowledges within 4 hours
-2. Revises `ARCHITECTURE.md` with new design
-3. Updates `DECISIONS.md` with rationale for change
-4. Notifies team (self) of revised approach
-5. Resumes work with new spec
+1. ✅ Code implemented per `ARCHITECTURE.md`
+2. ✅ Unit tests pass (Developer)
+3. ✅ Integration tests pass (QA)
+4. ✅ **E2E user journey tests pass (QA + UI/UX reviewed)**
+5. ✅ No hardcoded placeholder data in responses
+6. ✅ Cross-user isolation verified (if data is user-scoped)
+7. ✅ Error states show friendly messages (tested via E2E)
 
-### 6.3 External API Breaks (Yahoo, CoinGecko, etc.)
-**Rule:** This is not a code defect. This is an operational issue.  
-**Architect:**
-1. Confirms circuit breaker is working as designed
-2. Decides: Wait for fix vs implement fallback vs disable module temporarily
-3. Updates `DECISIONS.md` with incident record
-4. May create new task to add fallback data source
+For **backend-only work**, the definition of done is:
 
-### 6.4 Agent Unresponsive
-**Rule:** Check `session_status` or `sessions_list` for status.  
-**If stuck:**
-1. Attempt `sessions_send` with clarifying question
-2. If no response in 24 hours, restart session with simplified task
-3. Document in `DECISIONS.md` if pattern emerges
+1. ✅ Code implemented per `ARCHITECTURE.md`
+2. ✅ Unit tests pass (Developer)
+3. ✅ Integration tests pass (QA)
+4. ✅ No breaking changes to existing API contracts
 
 ---
 
-## 7. Quality Gates
+## 7. References
 
-### 7.1 Definition of Done
-A task is DONE when:
-- [ ] Deliverable matches ARCHITECTURE.md spec
-- [ ] Code is committed to repository
-- [ ] Unit tests pass (Developer role)
-- [ ] QA validation passes (QA role sign-off)
-- [ ] Architect structural review passes (Architect role)
-- [ ] No open DEFECTS against the task
-- [ ] Documentation updated (if architecture changed)
-
-### 7.2 Definition of Ready
-A task is ready for assignment when:
-- [ ] Clear deliverable defined
-- [ ] Acceptance criteria listed
-- [ ] No unresolved dependencies
-- [ ] Estimated effort by Architect
-- [ ] Section of ARCHITECTURE.md referenced
-
-### 7.3 Inter-Task Regression Gate
-Before the Architect assigns the next DEV task, the following gate must pass:
-
-- [ ] QA runs the full test suite (unit + integration) against the current codebase.
-- [ ] If available, the CI pipeline (lint → test → build) must be green.
-- [ ] If tests fail, the Developer fixes the regression before the next task begins.
-- [ ] QA updates `TASKS.md` to mark the regression task DONE.
-
-**Purpose:** Prevent quality decay as new features are layered on top of existing code. Each new task starts from a known-good state.
-
-**Exception:** Purely documentation or architecture tasks (ARCH-XXX) may skip the regression gate at Architect discretion.
-
-### 7.4 Commit and Push Per Milestone
-**Rule:** Every completed milestone must be committed and pushed to the repository.
-
-**Workflow:**
-```
-Developer completes milestone
-         ↓
-Commit with descriptive message: "DEV-XXX: [what was done]"
-         ↓
-Push to GitHub
-         ↓
-GitHub Actions automatically runs regression (QA-REG)
-         ↓
-[If green] → Architect marks milestone DONE, proceeds to next
-[If red] → Developer fixes, commits, pushes again
-```
-
-**Commit Message Format:**
-```
-DEV-XXX: Brief description of what was implemented
-
-- Specific change 1
-- Specific change 2
-- Any known limitations or next steps
-```
-
-**Purpose:** 
-- Ensure every milestone is preserved in version control
-- Enable QA to run regression tests on each completed unit of work
-- Maintain clean history for review and rollback
-
----
-
-## 8. Phase 1 Scope
-- Backend foundation (FastAPI, auth, database)
-- Redis queue and consumer
-- Portfolio Module (full)
-- Calendar Module (full)
-- Log Module (basic)
-- Frontend foundation (Next.js, grid, theming)
-- Dashboard layout persistence
-- Basic alert system (email via Resend)
-- Docker Compose deployment
-
-### 8.2 Explicitly Excluded (Phase 2 Candidates)
-- Crypto Module (can add later via registry)
-- Advanced charting (Recharts only, no custom D3)
-- Mobile native app (responsive web only)
-- Multi-user support (single user only)
-- Advanced alerting (SMS, webhooks)
-- VPS deployment automation (local only)
-- Comprehensive CI/CD pipeline
-
-### 8.3 Success Criteria for Phase 1
-1. Can create Portfolio module, add positions, see total in SGD
-2. Can create Calendar module, add personal events, see scraped events
-3. Can drag/resize cards, layout persists
-4. Alerts trigger and send email
-5. System logs visible in Log Module
-6. All running via `docker-compose up`
-
----
-
-## 9. Revision History
-
-| Version | Date | Changes | Author |
-|---------|------|---------|--------|
-| 1.0 | 2024-01-15 | Initial workflow | Architect |
-| 2.0 | 2026-04-20 | Single worker (Abyssal Droid) with role switching | Architect |
-
----
-
-**Next Step:** Create `TASKS.md` with Phase 1 work breakdown, then switch to appropriate role and begin work.
+- `ARCHITECTURE.md` — Single source of truth for design decisions
+- `QA-001-TEST-STRATEGY.md` — Test pyramid and tooling
+- `docs/MVP-UX-FLOWS.md` — Manual UX flow documentation
+- `tests/test_ux_scenarios_e2e.py` — Automated UX scenario tests

@@ -192,6 +192,8 @@ async def delete_module(
 async def get_module_data(
     module_id: UUID,
     size: str | None = None,
+    severity: str | None = None,
+    source: str | None = None,
     db: AsyncSession = Depends(get_db_session),
     user_id: str = Depends(get_current_user),
 ) -> Any:
@@ -224,7 +226,18 @@ async def get_module_data(
     handler = handler_class()
     data_size = size or module.size
     
-    data = await handler.get_data(str(module_id), data_size)
+    # Pass db session and query params to handler if supported
+    import inspect
+    sig = inspect.signature(handler.get_data)
+    kwargs = {}
+    if 'db_session' in sig.parameters:
+        kwargs['db_session'] = db
+    if 'severity' in sig.parameters and severity:
+        kwargs['severity'] = severity
+    if 'source' in sig.parameters and source:
+        kwargs['source'] = source
+    
+    data = await handler.get_data(str(module_id), data_size, **kwargs)
     
     return {
         "module_id": module_id,

@@ -678,7 +678,185 @@
             document.getElementById('empty-state').classList.remove('hidden');
         }
 
-        // Render modules
+        // Module Render Registry (DEF-020, DEF-021 fix)
+        // Each renderer gets module + DOM container, uses standard DOM APIs
+        const MODULE_RENDERERS = {
+            portfolio: renderPortfolioModule,
+            calendar: renderCalendarModule,
+            log: renderLogModule,
+        };
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function renderPortfolioModule(module, container) {
+            container.innerHTML = '<div class="flex items-center justify-center h-20"><div class="loading-spinner"></div></div>';
+            try {
+                const response = await api(`/modules/${module.id}/data`);
+                if (!response.ok) throw new Error('Failed to fetch portfolio');
+                const data = await response.json();
+                const totalValue = data.total_value || 0;
+                const change = data.change_24h || 0;
+                const changeClass = change >= 0 ? 'text-status-online' : 'text-status-critical';
+                const changeIcon = change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                const assets = data.assets || [];
+                const stocks = assets.filter(a => a.type === 'stock').length;
+                const crypto = assets.filter(a => a.type === 'crypto').length;
+                const allocation = data.allocation || {};
+                const totalPct = Object.values(allocation).reduce((a, b) => a + b, 0) || 1;
+
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-baseline space-x-2">
+                            <span class="text-2xl font-bold text-white">$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="text-xs ${changeClass} flex items-center">
+                                <i class="fas ${changeIcon} mr-1"></i>${Math.abs(change).toFixed(2)}%
+                            </span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs text-gray-400">
+                                <span>Portfolio Value</span>
+                                <span>${assets.length} assets</span>
+                            </div>
+                            <div class="h-1.5 bg-dark-700 rounded-full overflow-hidden">
+                                <div class="h-full progress-bar-purple rounded-full" style="width: ${Math.min(totalPct, 100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 pt-1">
+                            <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-400">Stocks: ${stocks}</span>
+                            <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-400">Crypto: ${crypto}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500 py-8">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2 text-status-warning"></i>
+                        <p class="text-sm">Failed to load portfolio</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function renderCalendarModule(module, container) {
+            container.innerHTML = '<div class="flex items-center justify-center h-20"><div class="loading-spinner"></div></div>';
+            try {
+                const response = await api(`/modules/${module.id}/data`);
+                if (!response.ok) throw new Error('Failed to fetch calendar');
+                const data = await response.json();
+                const events = data.events || [];
+                const upcoming = events.filter(e => new Date(e.event_date) >= new Date());
+                const nextEvent = upcoming[0];
+
+                let html = '<div class="space-y-3">';
+                if (nextEvent) {
+                    const impactColor = nextEvent.impact === 'high' ? 'text-status-critical' :
+                                       nextEvent.impact === 'medium' ? 'text-status-warning' : 'text-status-online';
+                    const impactBg = nextEvent.impact === 'high' ? 'bg-status-critical/10 border-status-critical/20' :
+                                    nextEvent.impact === 'medium' ? 'bg-status-warning/10 border-status-warning/20' : 'bg-status-online/10 border-status-online/20';
+                    const date = new Date(nextEvent.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    html += `
+                        <div class="flex items-center space-x-3 p-2.5 bg-dark-800/50 rounded-xl border border-white/5">
+                            <div class="w-8 h-8 rounded-lg ${impactBg} flex items-center justify-center">
+                                <i class="fas fa-calendar ${impactColor} text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-white truncate">${escapeHtml(nextEvent.title)}</div>
+                                <div class="text-xs text-gray-500">${date} • ${escapeHtml(nextEvent.category || 'event')}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="flex items-center space-x-3 p-2.5 bg-dark-800/50 rounded-xl border border-white/5">
+                            <div class="w-8 h-8 rounded-lg bg-accent-purple/20 flex items-center justify-center">
+                                <i class="fas fa-calendar text-accent-purple text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-white truncate">No upcoming events</div>
+                                <div class="text-xs text-gray-500">All caught up!</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                html += `
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>Upcoming</span>
+                        <span class="text-accent-purple">${upcoming.length} events</span>
+                    </div>
+                </div>`;
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500 py-8">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2 text-status-warning"></i>
+                        <p class="text-sm">Failed to load calendar</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function renderLogModule(module, container) {
+            container.innerHTML = '<div class="flex items-center justify-center h-20"><div class="loading-spinner"></div></div>';
+            try {
+                const response = await api(`/modules/${module.id}/data`);
+                if (!response.ok) throw new Error('Failed to fetch logs');
+                const data = await response.json();
+                const logs = data.logs || [];
+                const total = data.total || logs.length;
+
+                if (logs.length === 0) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-gray-500 py-8">
+                            <i class="fas fa-inbox text-3xl mb-3 opacity-50"></i>
+                            <p class="text-sm">No logs yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const logsHtml = logs.slice(0, 10).map(log => {
+                    const colorClass = log.severity === 'ERROR' ? 'text-status-critical bg-status-critical/10 border-status-critical/20' :
+                                      log.severity === 'WARN' ? 'text-status-warning bg-status-warning/10 border-status-warning/20' :
+                                      'text-status-online bg-status-online/10 border-status-online/20';
+                    const icon = log.severity === 'ERROR' ? 'fa-exclamation-circle' :
+                                log.severity === 'WARN' ? 'fa-exclamation-triangle' :
+                                'fa-info-circle';
+                    const time = new Date(log.created_at).toLocaleTimeString();
+                    const source = log.source || 'system';
+                    return `
+                        <div class="flex items-start space-x-2 p-2 rounded-lg ${colorClass} border">
+                            <i class="fas ${icon} mt-0.5 text-xs"></i>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-medium truncate">${escapeHtml(log.message)}</div>
+                                <div class="text-xs opacity-70 flex items-center space-x-2 mt-0.5">
+                                    <span>${time}</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px]">${escapeHtml(source)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = logsHtml + `
+                    <div class="text-xs text-gray-500 flex justify-between mt-3 pt-2 border-t border-white/5">
+                        <span>Total: ${total} entries</span>
+                    </div>
+                `;
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500 py-8">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2 text-status-warning"></i>
+                        <p class="text-sm">Failed to load logs</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render modules using DOM API + Module Render Registry
         function renderModules() {
             document.getElementById('loading').classList.add('hidden');
             const grid = document.getElementById('dashboard-grid');
@@ -693,10 +871,13 @@
 
             emptyState.classList.add('hidden');
             grid.classList.remove('hidden');
+            modulesContainer.innerHTML = '';
 
-            // Render dynamic modules in the container
-            modulesContainer.innerHTML = modules.map((module) => `
-                <div class="glass-card rounded-2xl p-5 ${getGridClass(module.size || 'medium')} transition-all duration-300 hover:scale-[1.02]" style="grid-column: span ${getWidth(module)};">
+            modules.forEach((module) => {
+                const card = document.createElement('div');
+                card.className = `glass-card rounded-2xl p-5 ${getGridClass(module.size || 'medium')} transition-all duration-300 hover:scale-[1.02]`;
+                card.style.cssText = `grid-column: span ${getWidth(module)};`;
+                card.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 rounded-xl icon-badge flex items-center justify-center">
@@ -710,15 +891,28 @@
                                 </p>
                             </div>
                         </div>
-                        <button onclick="deleteModule('${module.id}')" class="w-8 h-8 rounded-lg hover:bg-status-critical/20 hover:text-status-critical text-gray-500 transition flex items-center justify-center">
+                        <button class="delete-module-btn w-8 h-8 rounded-lg hover:bg-status-critical/20 hover:text-status-critical text-gray-500 transition flex items-center justify-center" data-id="${module.id}">
                             <i class="fas fa-trash text-sm"></i>
                         </button>
                     </div>
-                    <div class="text-gray-300">
-                        ${getModuleContent(module)}
-                    </div>
-                </div>
-            `).join('');
+                    <div class="module-content text-gray-300"></div>
+                `;
+
+                // Attach delete handler via DOM (not inline onclick)
+                card.querySelector('.delete-module-btn').addEventListener('click', () => deleteModule(module.id));
+
+                // Append to DOM first
+                modulesContainer.appendChild(card);
+
+                // Then render content via registry
+                const contentContainer = card.querySelector('.module-content');
+                const renderer = MODULE_RENDERERS[module.module_type];
+                if (renderer) {
+                    renderer(module, contentContainer);
+                } else {
+                    contentContainer.innerHTML = '<p class="text-gray-400">Module content</p>';
+                }
+            });
         }
 
         function getGridClass(size) {
@@ -744,114 +938,8 @@
             return icons[type] || 'fa-cube';
         }
 
-        function getModuleContent(module) {
-            const contents = {
-                portfolio: `
-                    <div class="space-y-3">
-                        <div class="flex items-baseline space-x-2">
-                            <span class="text-2xl font-bold text-white">$0.00</span>
-                            <span class="text-xs text-status-online flex items-center">
-                                <i class="fas fa-arrow-up mr-1"></i>0.00%
-                            </span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs text-gray-400">
-                                <span>Portfolio Value</span>
-                                <span>0 assets</span>
-                            </div>
-                            <div class="h-1.5 bg-dark-700 rounded-full overflow-hidden">
-                                <div class="h-full progress-bar-purple rounded-full" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2 pt-1">
-                            <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-400">Stocks: 0</span>
-                            <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-400">Crypto: 0</span>
-                        </div>
-                    </div>
-                `,
-                calendar: `
-                    <div class="space-y-3">
-                        <div class="flex items-center space-x-3 p-2.5 bg-dark-800/50 rounded-xl border border-white/5">
-                            <div class="w-8 h-8 rounded-lg bg-accent-purple/20 flex items-center justify-center">
-                                <i class="fas fa-calendar text-accent-purple text-sm"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm text-white truncate">No events today</div>
-                                <div class="text-xs text-gray-500">All caught up!</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500">
-                            <span>Upcoming</span>
-                            <span class="text-accent-purple">0 events</span>
-                        </div>
-                    </div>
-                `,
-                log: `
-                    <div id="log-content-${module.id}" class="space-y-2 h-full">
-                        <div class="flex items-center justify-center h-20">
-                            <div class="loading-spinner"></div>
-                        </div>
-                    </div>
-                    <script>
-                        (async function() {
-                            try {
-                                const response = await api('/logs?limit=10');
-                                if (!response.ok) throw new Error('Failed to fetch logs');
-                                const data = await response.json();
-                                const container = document.getElementById('log-content-${module.id}');
-                                
-                                if (!data.logs || data.logs.length === 0) {
-                                    container.innerHTML = `
-                                        <div class="flex flex-col items-center justify-center h-full text-gray-500 py-8">
-                                            <i class="fas fa-inbox text-3xl mb-3 opacity-50"></i>
-                                            <p class="text-sm">No logs yet</p>
-                                        </div>
-                                    `;
-                                    return;
-                                }
-                                
-                                container.innerHTML = data.logs.map(log => {
-                                    const colorClass = log.severity === 'ERROR' ? 'text-status-critical bg-status-critical/10 border-status-critical/20' :
-                                                      log.severity === 'WARN' ? 'text-status-warning bg-status-warning/10 border-status-warning/20' :
-                                                      'text-status-online bg-status-online/10 border-status-online/20';
-                                    const icon = log.severity === 'ERROR' ? 'fa-exclamation-circle' :
-                                                log.severity === 'WARN' ? 'fa-exclamation-triangle' :
-                                                'fa-info-circle';
-                                    const time = new Date(log.created_at).toLocaleTimeString();
-                                    const source = log.source || 'system';
-                                    
-                                    return `
-                                        <div class="flex items-start space-x-2 p-2 rounded-lg ${colorClass} border">
-                                            <i class="fas ${icon} mt-0.5 text-xs"></i>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="text-xs font-medium truncate">${log.message}</div>
-                                                <div class="text-xs opacity-70 flex items-center space-x-2 mt-0.5">
-                                                    <span>${time}</span>
-                                                    <span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px]">${source}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('') + `
-                                    <div class="text-xs text-gray-500 flex justify-between mt-3 pt-2 border-t border-white/5">
-                                        <span>Total: ${data.total} entries</span>
-                                    </div>
-                                `;
-                            } catch (err) {
-                                const container = document.getElementById('log-content-${module.id}');
-                                container.innerHTML = `
-                                    <div class="flex flex-col items-center justify-center h-full text-gray-500 py-8">
-                                        <i class="fas fa-exclamation-triangle text-2xl mb-2 text-status-warning"></i>
-                                        <p class="text-sm">Failed to load logs</p>
-                                    </div>
-                                `;
-                            }
-                        })();
-                    </script>
-                `,
-            };
-            return contents[module.module_type] || '<p class="text-gray-400">Module content</p>';
-        }
+        // getModuleContent() removed — replaced by MODULE_RENDERERS registry (DEF-020, DEF-021 fix)
+        // Each renderer in MODULE_RENDERERS fetches data via api(/modules/{id}/data) after DOM insertion
 
         // Modal functions
         function openAddModuleModal() {

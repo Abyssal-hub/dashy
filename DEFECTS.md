@@ -197,7 +197,140 @@ This allows tests to run without external pytest-playwright plugin dependency.
 
 ---
 
-## Summary: QA-011 Defects (ALL RESOLVED)
+## DEF-020: Log Module Stuck on "Loading..." (Module Render Registry Not Implemented)
+
+**Status:** FIXED ✅  
+**Severity:** Blocker  
+**Discovered:** 2026-04-21 during architecture gap analysis  
+**Fixed By:** Developer  
+**Date Fixed:** 2026-04-21  
+**Related To:** DEV-012, Section 4.6, FE-MVP-001
+
+### Summary
+Log modules render inline `<script>` tags inside `innerHTML`, but browsers do not execute `<script>` tags inserted via `innerHTML` (CSP/XSS prevention). Result: log module shows "Loading..." forever.
+
+### Fix Applied
+Implemented `MODULE_RENDERERS` registry pattern in `dashboard.html`:
+- `MODULE_RENDERERS` maps module types to async renderer functions
+- `renderLogModule()` uses DOM APIs (`textContent`, `fetch()`, `innerHTML` for static markup only)
+- No inline `<script>` tags in dynamically generated content
+- Scripts execute after DOM insertion via `addEventListener`
+
+### Files Modified
+- `frontend/dashboard.html` — Replaced `renderModules()` and `getModuleContent()` with registry-based DOM rendering
+
+**Status:** FIXED ✅  
+**Date Fixed:** 2026-04-21
+
+---
+
+## DEF-021: Portfolio/Calendar Modules Show Hardcoded Fake Data
+
+**Status:** FIXED ✅  
+**Severity:** Major  
+**Discovered:** 2026-04-21 during architecture gap analysis  
+**Fixed By:** Developer  
+**Date Fixed:** 2026-04-21  
+**Related To:** DEV-006, DEV-007, FE-MVP-001
+
+### Summary
+Portfolio and Calendar modules display static placeholder data (`$0.00`, `"0 assets"`, `"No events"`) instead of fetching real data from the backend.
+
+### Root Cause
+`GET /api/modules/{id}/data` endpoint exists and works (verified in backend tests), but `dashboard.html` never calls it. The `getModuleContent()` function returns hardcoded HTML strings.
+
+### Expected (per ARCHITECTURE.md Section 5.2)
+Frontend calls `GET /api/modules/{module.id}/data?size=${module.size}` and renders actual data.
+
+### Actual
+Portfolio card shows:
+```html
+<div class="text-3xl font-bold text-white">$0.00</div>
+<div class="text-xs text-gray-400">0 assets</div>
+```
+
+Calendar card shows:
+```html
+<p class="text-gray-400">No events today</p>
+```
+
+### Fix Applied
+Implemented async renderers for portfolio and calendar:
+- `renderPortfolioModule()` fetches `/api/modules/{id}/data`, displays real portfolio value, assets, allocation
+- `renderCalendarModule()` fetches `/api/modules/{id}/data`, displays real upcoming events with impact colors
+- Both handle loading states (spinner), empty states, and error states gracefully
+- Both use `escapeHtml()` for XSS prevention when rendering user data
+
+### Files Modified
+- `frontend/dashboard.html` — Added `renderPortfolioModule()` and `renderCalendarModule()` to MODULE_RENDERERS registry
+
+---
+
+## DEF-022: Frontend Interaction Logging Not Implemented
+
+**Status:** BACKLOG  
+**Severity:** Minor  
+**Discovered:** 2026-04-21 during architecture gap analysis  
+**Related To:** DEV-015, Section 11.2.2
+
+### Summary
+DEV-015 is marked DONE, but `dashboard.html` has zero interaction tracking. The TypeScript files (`logger.ts`, `useInteraction.ts`) were created for a React frontend that doesn't exist.
+
+### Rationale for Backlog
+- DEV-015 was implemented for React/Next.js architecture
+- Current Phase 1 uses vanilla HTML/JS
+- Requires rewriting interaction logger in vanilla JS
+- Non-critical for MVP functionality
+
+### Decision
+Defer to Phase 2 (React migration) or file as separate DEV task if needed for MVP.
+
+---
+
+## DEF-023: System Status Widget Shows Fake Data
+
+**Status:** BACKLOG  
+**Severity:** Cosmetic  
+**Discovered:** 2026-04-21 during architecture gap analysis  
+**Related To:** Section 11.3
+
+### Summary
+System Status widget shows hardcoded values (CPU 42%, Memory 68%, Disk 23%, Uptime "3d 12h 34m"). No system metrics API exists.
+
+### Decision
+Cosmetic enhancement. Not required for MVP core functionality. File as P3 task if desired.
+
+---
+
+## DEF-024: Alert Widget Shows Fake Data
+
+**Status:** BACKLOG  
+**Severity:** Cosmetic  
+**Discovered:** 2026-04-21 during architecture gap analysis  
+**Related To:** DEV-010, Section 9
+
+### Summary
+Alert widget shows "2 active" alerts and "High CPU usage detected" — all hardcoded HTML. No connection to backend alert system.
+
+### Decision
+Blocked on DEV-010 (Alert system). Will resolve automatically when alert system is implemented.
+
+---
+
+## DEF-025: Health Endpoint Missing Scraper Status
+
+**Status:** BACKLOG  
+**Severity:** Low  
+**Discovered:** 2026-04-21 during architecture gap analysis  
+**Related To:** Section 11.3
+
+### Summary
+`GET /health` returns DB + Redis status but does not check "Scraper last-run timestamps (stale if > 2× expected interval)" per architecture.
+
+### Decision
+Low priority. Scraper workers (DEV-013, DEV-014) are not yet implemented. No scraper status to report. Will resolve when scrapers are added.
+
+---
 
 | ID | Severity | Issue | Status | Resolution |
 |----|----------|-------|--------|------------|
@@ -207,6 +340,8 @@ This allows tests to run without external pytest-playwright plugin dependency.
 | DEF-011-004 | Minor | Wrong import path in tests | FIXED | QA removed broken imports |
 | DEF-011-005 | Minor | Missing json import | FIXED | QA added import |
 | DEF-011-006 | Major | Missing pytest-playwright | FIXED | QA added custom fixtures |
+| DEF-020 | Blocker | Log module stuck on "Loading..." | FIXED | Developer implemented MODULE_RENDERERS registry |
+| DEF-021 | Major | Portfolio/Calendar fake data | FIXED | Developer implemented async data fetchers |
 
 **All defects resolved. QA-011 ready for sign-off.**
 

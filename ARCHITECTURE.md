@@ -1,8 +1,8 @@
 # Architecture Document: Personal Monitoring Dashboard
 
-**Version:** 1.0  
-**Date:** 2024-01-15  
-**Status:** Approved for Implementation  
+**Version:** 1.1  
+**Date:** 2026-04-20  
+**Status:** Phase 1 MVP Complete — Phase 2 Roadmap Defined  
 
 ---
 
@@ -19,11 +19,36 @@ Single user, local machine deployment, with potential future migration to VPS.
 - **Type Safety:** Strict typing across frontend and backend.
 - **Simplicity First:** No over-engineering for single-user, low-volume workloads.
 
+### 1.3 Architecture Phases
+This document covers both the **current Phase 1 MVP implementation** and the **Phase 2 target architecture**. Key differences are explicitly marked.
+
+| Phase | Scope | Frontend | Backend | Data Layer |
+|-------|-------|----------|---------|------------|
+| **Phase 1 (Current)** | MVP — single user, local deployment | Vanilla HTML/JS + Tailwind CDN | FastAPI + PostgreSQL + Redis | File-based logs, TimescaleDB metrics |
+| **Phase 2 (Target)** | Production-ready, multi-user capable | Next.js 14 + TypeScript + TanStack Query | Same backend, enhanced | File-based logs (superior), full TimescaleDB analytics |
+
+**Rationale for Phase 1 simplifications:**
+- Vanilla HTML/JS: Faster iteration for MVP validation (FE-MVP-001, 2026-04-15)
+- File-based logging: Simpler debugging, lower overhead, human-readable, no schema migration pain (DEV-012, 2026-04-19)
+- Plain CSS grid: Good enough for static layouts; react-grid-layout for Phase 2 interactivity
+
 ---
 
 ## 2. Technology Stack
 
 ### 2.1 Frontend
+
+#### Phase 1 (Current) — Vanilla HTML/JS
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Markup | HTML5 | Static pages: `index.html` (login), `dashboard.html` (dashboard) |
+| Language | JavaScript (ES2022) | Vanilla JS with `fetch()` for API calls |
+| Styling | Tailwind CSS (CDN) | Utility-first responsive styling |
+| Grid | CSS Grid (`grid-template-columns: repeat(12, 1fr)`) | Static 12-column layout |
+| State | `localStorage` + in-memory vars | JWT tokens, module cache |
+| Icons | Font Awesome 6 (CDN) | UI icons |
+
+#### Phase 2 (Target) — Next.js 14
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | Framework | Next.js 14 (App Router) | React framework with SSR/SSG |
@@ -119,24 +144,46 @@ Single user, local machine deployment, with potential future migration to VPS.
 ## 4. Frontend Architecture
 
 ### 4.1 Application Structure
-- **App Router (Next.js 14):**
-  - `/` → Masonry grid dashboard
-  - `/module/[id]` → Full module detail view
-  - `/login` → Authentication page
-- **State Management:**
-  - **TanStack Query:** All server state (module data, layouts, user profile)
-  - **Zustand:** UI state (sidebar open/close, active modal, selected time ranges)
+
+#### Phase 1 — Static Pages
+- `index.html` → Login page (JWT authentication)
+- `dashboard.html` → Main dashboard with grid layout
+- `css/` → Custom styles (if any beyond Tailwind)
+- `js/` → Module renderers and dashboard logic
+
+**State Management:**
+- **Server State:** Direct `fetch()` calls with `localStorage` JWT token
+- **Client State:** In-memory variables, DOM state
+
+#### Phase 2 — Next.js 14 App Router
+- `/` → Masonry grid dashboard
+- `/module/[id]` → Full module detail view
+- `/login` → Authentication page
+
+**State Management:**
+- **TanStack Query:** All server state (module data, layouts, user profile)
+- **Zustand:** UI state (sidebar open/close, active modal, selected time ranges)
 
 ### 4.2 Dashboard Layout
-- **Main View:** Masonry grid (`react-grid-layout`)
-  - 4 columns desktop, 3 tablet, 2 small tablet, 1 mobile
-  - Base row height: 150px
-  - Cards are draggable and resizable
-  - Layout persisted via `PUT /dashboard/layout`
-- **Sidebar:** Module list and navigation
-  - Click module name → full module view
-  - "+ Add Module" button
-  - Log Module accessible here
+
+#### Phase 1 — Static CSS Grid
+- **Grid:** CSS Grid with `grid-template-columns: repeat(12, 1fr)`
+- **Responsive breakpoints:**
+  - Desktop (>1280px): 12 columns
+  - Tablet (768-1280px): 8 columns
+  - Mobile (<768px): 4 columns
+- **Row height:** Fixed at implicit content height (no explicit row height)
+- **Modules:** Static positioning, no drag/resize
+- **Layout persistence:** `PUT /dashboard/layout` stores grid config, but frontend currently hardcodes columns=12, rowHeight=100
+
+#### Phase 2 — Masonry Grid (react-grid-layout)
+- **Grid:** 4 columns desktop, 3 tablet, 2 small tablet, 1 mobile
+- **Base row height:** 150px
+- **Cards:** Draggable and resizable
+- **Layout persistence:** `PUT /dashboard/layout` saves exact positions
+- **Optimistic UI:** Drag/resize updates immediately, debounced save to backend
+
+**Note:** Phase 1 layout is module-centric (Section 6.1 Decision B07). Grid config is hardcoded in frontend. Phase 2 introduces separate layout tables for multi-layout support.
 
 ### 4.3 Module Card Interactions
 | Action | Behavior |
@@ -156,6 +203,65 @@ Single user, local machine deployment, with potential future migration to VPS.
 ### 4.5 Theme
 - **Dark mode default**
 - System preference detection with manual override toggle
+
+### 4.6 Module Render Registry Pattern
+
+**Status:** Phase 1 — Implemented in `dashboard.html`. Phase 2 — Will migrate to React components.
+
+**Principle:** Module content is rendered via type-specific renderer functions registered in a central lookup table. Renderers are responsible for fetching data, rendering DOM, and managing their own lifecycle (refresh intervals, error states, cleanup).
+
+**Why this pattern:**
+- Browsers do **not** execute `<script>` tags inserted via `innerHTML` (CSP/XSS prevention)
+- Inline scripts in dynamically generated HTML silently fail — this is the root cause of the log module "Loading..." bug
+- Renderers use standard DOM APIs (`document.createElement`, `textContent`, `fetch`, etc.)
+
+**Phase 1 Implementation (Vanilla JS):**
+```javascript
+const MODULE_RENDERERS = {
+    portfolio: renderPortfolioModule,
+    calendar: renderCalendarModule,
+    log: renderLogModule,
+    crypto: renderCryptoModule,
+};
+
+function renderModules() {
+    modules.forEach(module => {
+        const container = createModuleContainer(module);
+        const renderer = MODULE_RENDERERS[module.module_type];
+        if (renderer) {
+            renderer(module, container);
+        } else {
+            container.innerHTML = `<p>Unknown module type: ${module.module_type}</p>`;
+        }
+    });
+}
+```
+
+**Renderer Contract:**
+| Responsibility | Requirement |
+|----------------|-------------|
+| Input | `module` object (id, name, module_type, config, size) + DOM `container` element |
+| Data fetching | Call `GET /api/modules/{module.id}/data?size=${module.size}` |
+| Rendering | Populate `container` with module-specific content using DOM APIs only |
+| Error handling | Show error state inside the card, never `alert()` or throw uncaught |
+| Refresh | Manage own `setInterval` for live data; cancel on module removal |
+| Cleanup | Remove intervals/event listeners when module is deleted or dashboard unmounts |
+
+**Phase 2 Migration (React):**
+Each renderer becomes a React component:
+```typescript
+// Phase 2: React component registry
+const ModuleComponents: Record<string, React.FC<ModuleProps>> = {
+    portfolio: PortfolioModule,
+    calendar: CalendarModule,
+    log: LogModule,
+};
+```
+
+**Backend Contract:**
+- `GET /api/modules/{id}/data` returns `{ type: "portfolio", data: {...}, meta: {...} }`
+- `type` field must match frontend renderer registry key
+- `size` parameter: `compact` | `standard` | `expanded` (derived from grid dimensions)
 
 ---
 
@@ -210,6 +316,9 @@ Single user, local machine deployment, with potential future migration to VPS.
 | GET | `/health` | System health status (DB, Redis, scraper) |
 
 ### 5.2 Module Handler Registry
+
+**Status:** Phase 1 — Backend handlers implemented. Frontend uses static rendering (Section 4.6). Phase 2 — Full integration with `/modules/{id}/data`.
+
 Each module type maps to a dedicated handler class:
 
 ```python
@@ -221,11 +330,32 @@ HANDLERS = {
 }
 ```
 
+#### Phase 1 — Current Implementation
+- Handlers are registered and functional for portfolio and calendar modules
+- `PortfolioHandler.get_data()` supports compact/standard/expanded sizes
+- `CalendarHandler.get_data()` supports date range filtering
+- `LogHandler.get_data()` is implemented but frontend does not call `/modules/{id}/data`
+- **Frontend bypass:** Log module content is rendered directly via `MODULE_RENDERERS.log()` calling `GET /api/logs` (not `/modules/{id}/data`)
+
+#### Phase 2 — Target Implementation
 The `GET /modules/{id}/data` endpoint:
 1. Looks up module type
 2. Resolves current grid dimensions to `size` bucket (compact/standard/expanded)
 3. Delegates to handler
 4. Returns generic envelope with module-specific payload
+
+```json
+{
+  "type": "portfolio",
+  "data": { "positions": [...], "total_value": 12345.67 },
+  "meta": { "last_updated": "2026-04-20T14:30:00Z", "size": "standard" }
+}
+```
+
+**Frontend-Backend Contract:**
+- `type` field must match `MODULE_RENDERERS` registry key (Section 4.6)
+- `size` is derived from module config or grid dimensions
+- Handler decides what data to include based on `size` (less detail for compact)
 
 ### 5.3 Authentication & Security
 - **Password Hashing:** Argon2id
@@ -413,16 +543,54 @@ The `GET /modules/{id}/data` endpoint:
 ### 7.4 Log Module
 **Type ID:** `log`
 
+**Data Source: File-Based Structured Logging (Definitive Choice)**
+- **Storage:** Structured JSON log files (`app.log`, `interactions.log`) in project-local `logs/` directory
+- **Rotation:** Daily rotation with automatic cleanup
+- **Retention:** 7-day automatic cleanup via `cleanup_old_logs()`
+- **API:** `GET /api/logs?source=system&severity=INFO&limit=50`
+- **Schema per line:**
+```json
+{"id": "uuid", "timestamp": "2026-04-20T14:30:00+08:00", "severity": "ERROR", "message": "...", "source": "backend|frontend", "metadata": {}}
+```
+
+**Why file logging over database:**
+- **Human-readable:** Can `tail -f logs/app.log` during debugging
+- **Zero schema migration:** Add fields without ALTER TABLE
+- **No DB overhead:** No connection pooling, no query planning, no index maintenance
+- **Portability:** Copy files, grep, awk, jq — standard Unix tools work
+- **Resilience:** DB down? Logs still write to disk
+- **Single-user optimized:** No contention, no locking, no transaction overhead
+
 **Features:**
 - Displays structured system logs from backend
-- Severity filtering (INFO, WARN, ERROR)
-- Real-time log streaming (optional, via Server-Sent Events)
+- Severity filtering (INFO, WARN, ERROR) with color coding
+- Real-time streaming via polling (every 10 seconds)
+- Severity buttons: ALL | INFO | WARN | ERROR
 
-**Data Sources:**
-- Backend structured logs written to `system_logs` table
+**Renderer Behavior:**
+- Polls `GET /api/logs?source=system&limit=50` every 10 seconds
+- Displays timestamp, severity (color-coded), message in scrollable container
+- Auto-scrolls to newest entry; "Pause" button stops auto-scroll
+- Uses DOM APIs only (no `innerHTML` with `<script>` tags per Section 4.6)
 
-**Refresh Modes:**
-- Auto: Every 10 seconds
+**Data Envelope:**
+```json
+{
+    "logs": [
+        {
+            "id": "uuid",
+            "timestamp": "2026-04-20T14:30:00Z",
+            "severity": "ERROR",
+            "message": "Database connection failed",
+            "source": "backend",
+            "metadata": {}
+        }
+    ],
+    "total": 42,
+    "limit": 50,
+    "offset": 0
+}
+```
 
 ---
 
@@ -570,7 +738,7 @@ ENVIRONMENT=local
 - **Log Module:** Critical logs also written to `system_logs` table (7-day retention)
 - **Docker:** stdout/stderr captured by Docker daemon (`docker logs`)
 
-#### 11.2.2 Frontend Interaction Logging (DEV-013)
+#### 11.2.2 Frontend Interaction Logging (DEV-015)
 **Requirement:** Log every start and end of user interaction on the UI for debugging.
 
 **Interaction Types Tracked:**
@@ -605,11 +773,11 @@ interface InteractionLog {
 ```
 
 **Implementation:**
-- **Frontend Service:** `lib/logger.ts` - InteractionLogger class
-- **React Integration:** `useInteraction()` hook for manual tracking
-- **Auto Tracking:** HOC `withInteractionTracking()` for component-level
-- **API Endpoint:** `POST /api/logs/interaction` - 202 Accepted
-- **Backend Storage:** Write to `system_logs` with source="frontend"
+- **Frontend (Phase 1):** Vanilla JS event listeners in `dashboard.html`
+- **Frontend (Phase 2):** React hook `useInteraction()` + HOC `withInteractionTracking()`
+- **API:** `POST /api/logs/interaction` — 202 Accepted
+- **Storage:** File-based (`interactions.log`) — same JSON line format as system logs
+- **Query:** `GET /api/logs?source=frontend&limit=50` reads from `interactions.log`
 - **Log Level Logic:**
   - `ERROR` - Failed interactions (success=false)
   - `WARN` - Slow interactions (>5000ms duration)
@@ -620,9 +788,6 @@ interface InteractionLog {
 2. **Performance monitoring:** Identify slow interactions
 3. **Usage analytics:** Track feature usage patterns
 4. **Error context:** Link failed API calls to triggering UI actions
-
-**Retention:** 7 days (same as system logs per Section 7.4)
-- **Levels:** DEBUG (development), INFO (normal operations), WARN (degradation), ERROR (failures)
 
 ### 11.3 Health Monitoring
 - `GET /health` returns status of:
@@ -693,6 +858,67 @@ If no objection, these will be applied during implementation.
 | B05 | Opaque refresh tokens (security) | **DECIDED 2024-04-16** — See DEF-011-001 |
 | B06 | API response includes layout fields | **DECIDED 2024-04-16** — See DEF-011-003 |
 | B07 | Module-centric layout (MVP) | **DECIDED 2026-04-16** — Positions inline in modules table, no dashboard_layouts endpoint for MVP. See QA-011. |
+| F06 | Vanilla HTML/JS for Phase 1 MVP | **DECIDED 2026-04-15** — Next.js deferred to Phase 2 for faster MVP validation. See FE-MVP-001. |
+| F07 | Module Render Registry pattern | **DECIDED 2026-04-20** — Type-specific renderers instead of inline `<script>` tags. See Section 4.6. |
+| B10 | File-based logging (definitive) | **DECIDED 2026-04-19** — Superior for single-user: human-readable, zero schema migration, no DB overhead, Unix tool compatible. See DEV-012 and Section 7.4. |
+| B11 | Separate interactions.log file | **DECIDED 2026-04-20** — Frontend interaction logs stored separately for easier debugging. See DEV-015. |
+
+---
+
+## 15. Phase 2 Migration Roadmap
+
+**Trigger:** When Phase 1 MVP is validated and ready for production hardening.
+
+### 15.1 Frontend Migration: Vanilla HTML → Next.js 14
+
+**Effort Estimate:** 2-3 weeks
+
+| Step | Task | Rationale |
+|------|------|-----------|
+| 1 | Initialize Next.js 14 project with App Router | Framework foundation |
+| 2 | Migrate `MODULE_RENDERERS` to React components | Each renderer → `components/modules/{type}.tsx` |
+| 3 | Implement `react-grid-layout` with layout persistence | Drag/resize interactivity (Section 4.2 Phase 2) |
+| 4 | Add TanStack Query for server state | Caching, background refetch, deduplication |
+| 5 | Add Zustand for client state | Sidebar, modals, filters |
+| 6 | Implement React Error Boundaries per module | Prevent one crash from destroying dashboard |
+| 7 | Add `useInteraction()` hook and HOC | Replace vanilla JS event tracking |
+| 8 | Recharts/Tremor data visualization | Replace static text with charts |
+| 9 | Port Tailwind dark theme | Preserve Phase 1 styling |
+
+**Backward Compatibility:**
+- `GET /api/modules/{id}/data` endpoint already exists (backend)
+- Module response envelope (`{type, data, meta}`) remains unchanged
+- JWT auth system remains unchanged
+
+### 15.2 Backend Enhancements (No Logging Migration)
+
+File-based logging is the definitive choice for this architecture (Section 7.4). No migration to database logging is planned.
+
+**Phase 2 backend work:**
+- Enhanced log querying (regex search, time range filtering, aggregation)
+- Log shipping to external systems (optional)
+- Log compression for long-term archival
+
+### 15.3 Full Handler Integration
+
+**Effort Estimate:** 2-3 days
+
+| Step | Task | Rationale |
+|------|------|-----------|
+| 1 | Wire frontend `MODULE_RENDERERS` to `GET /modules/{id}/data` | Use intended backend contract |
+| 2 | Implement `size` resolution from grid dimensions | Compact/standard/expanded per viewport |
+| 3 | Update `LogHandler.get_data()` to return envelope format | Consistency with other handlers |
+| 4 | Add size-aware rendering in each React component | Less detail for compact cards |
+
+### 15.4 Decision Register Updates
+
+New decisions needed for Phase 2:
+
+| ID | Decision | Options |
+|----|----------|---------|
+| F05 | SSR vs SSG for dashboard | SSR (live data) vs SSG + client hydration |
+| F08 | Chart library choice | Recharts (flexible) vs Tremor (opinionated) |
+| B13 | Module data caching | TanStack Query cache duration per module type |
 
 ---
 

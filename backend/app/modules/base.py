@@ -16,12 +16,13 @@ class ModuleHandler(ABC):
         pass
     
     @abstractmethod
-    async def get_data(self, module_id: str, size: str) -> dict[str, Any]:
+    async def get_data(self, module_id: str, size: str, **kwargs) -> dict[str, Any]:
         """Fetch and return module data based on size preset.
         
         Args:
             module_id: The module instance ID
             size: One of 'small', 'medium', 'large'
+            **kwargs: Optional additional arguments (e.g., db_session)
             
         Returns:
             Dict containing the module-specific data payload
