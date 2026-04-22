@@ -61,8 +61,8 @@ class ScraperConfig(Base):
     last_error_message = Column(Text, nullable=True)
 
 
-class SystemLog(Base):
-    __tablename__ = "system_logs"
+class MetricLog(Base):
+    __tablename__ = "metric_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
