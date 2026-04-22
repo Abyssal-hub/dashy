@@ -17,6 +17,7 @@
     "axios": "^1.6.2",
     "zustand": "^4.4.7",
     "clsx": "^2.0.0",
+    "tailwindcss-animate": "^1.0.7",
     "tailwind-merge": "^2.2.0",
     "lucide-react": "^0.300.0",
     "date-fns": "^3.0.0",
