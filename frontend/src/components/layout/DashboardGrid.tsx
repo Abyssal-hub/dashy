@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, Suspense } from "react";
+import React from "react";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -11,13 +12,25 @@ import type { Module, GridLayoutItem } from "@/types";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-// Module renderer registry — only log module was in scope per spec
+// Lazy load CalendarModule to avoid circular deps and chunk bloat
+const CalendarModule = React.lazy(() => import("@/components/modules/CalendarModule"));
+
+// Module renderer registry
 const ModuleRenderers: Record<string, React.FC<{ module: Module; data?: Record<string, unknown>; isLoading: boolean }>> = {
   log: LogRenderer,
+  calendar: CalendarModuleRenderer,
 };
 
 function FallbackRenderer() {
   return <div className="text-gray-500 text-sm">Module type not yet implemented</div>;
+}
+
+function CalendarModuleRenderer({ module, data, isLoading }: { module: Module; data?: Record<string, unknown>; isLoading: boolean }) {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <CalendarModule module={module} data={data} isLoading={isLoading} />
+    </Suspense>
+  );
 }
 
 function LogRenderer({ data, isLoading }: { module: Module; data?: Record<string, unknown>; isLoading: boolean }) {
