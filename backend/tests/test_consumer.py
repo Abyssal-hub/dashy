@@ -29,7 +29,6 @@ from app.services.consumer import (
     MAX_RETRIES,
 )
 from app.services.redis_client import get_redis_client
-from app.models.log import SystemLog
 
 
 class TestBatchAccumulator:

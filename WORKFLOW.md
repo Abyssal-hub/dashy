@@ -195,7 +195,42 @@ For **backend-only work**, the definition of done is:
 
 ---
 
-## 7. References
+## 8. Tool & Agent Rules
+
+### 8.1 Coding Tasks — Kimi-Coding ACP Harness (MANDATORY)
+
+**Rule:** All coding tasks (implementation, bug fixes, refactoring, test writing) **MUST** be executed via the `kimi-coding` ACP harness.
+
+**Why:**
+- Dedicated coding agent with optimized context for code generation
+- Parallel execution — I (main agent) retain planning/oversight while Kimi Code handles implementation
+- Cleaner separation of concerns: planning vs execution
+- Follows GStack methodology: separate planning agent from execution agent
+
+**How:**
+1. **I (main agent)** analyze the task, gather context, and prepare requirements
+2. **Spawn** `sessions_spawn` with `runtime: "acp"`, `agentId: "kimi"`
+3. **Kimi Code** implements the fix/feature in its own session
+4. **I verify** results, run tests, and report back to you
+
+**Exceptions:**
+- Quick file reads/writes for context gathering (still done by me)
+- Running tests and verifying results (I do this)
+- Architectural decisions (I coordinate with Architect role)
+- Non-code tasks (documentation, planning, analysis — I handle these)
+
+**Example workflow:**
+```
+User: "Fix the log module bug"
+  ↓
+Me: Analyze bug → Read files → Identify root cause → Prepare task spec
+  ↓
+Spawn: sessions_spawn(runtime="acp", agentId="kimi", task="Fix...")
+  ↓
+Kimi Code: Implements fix in its session
+  ↓
+Me: Verify fix → Run tests → Commit → Report results
+```
 
 - `ARCHITECTURE.md` — Single source of truth for design decisions
 - `QA-001-TEST-STRATEGY.md` — Test pyramid and tooling

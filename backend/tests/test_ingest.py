@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.auth.service import create_user, create_access_token
 from app.services.redis_client import get_redis_client
-from app.models.log import SystemLog
 from app.core.file_logger import read_logs
 import app.core.file_logger as file_logger
 

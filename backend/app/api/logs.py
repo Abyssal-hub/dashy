@@ -1,26 +1,65 @@
-"""System logs API endpoints - Now uses file-based logging for performance."""
+"""System logs API endpoints - Uses file-based logging with security hardening.
 
+SECURITY FIXES (2026-04-22):
+- Rate limiting on interaction endpoint (100 req/min per IP)
+- Async log writes to prevent event loop blocking
+- Input size validation on interaction logs
+"""
+
+import time
+from collections import defaultdict
 from uuid import UUID
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import select, and_, desc
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db_session
 from app.services.auth.deps import get_current_user
-from app.models.log import SystemLog
 from app.models.module import Module
-from app.modules.handlers.log import LogHandler, write_system_log
 from app.schemas.interaction import InteractionLogCreate, InteractionLogResponse
 from app.core.file_logger import (
-    write_log,
-    write_interaction_log,
-    read_logs,
-    get_severity_counts as get_file_severity_counts,
+    write_log_async,
+    write_interaction_log_async,
+    read_logs_async,
+    get_severity_counts_async,
+    check_log_health_async,
 )
 
 router = APIRouter(prefix="/logs", tags=["logs"])
+
+# Rate limiting storage (in-memory, per-process)
+# For production, use Redis
+_rate_limit_store = defaultdict(list)
+
+
+async def _check_rate_limit(request: Request, max_requests: int = 100, window: int = 60):
+    """Check if client has exceeded rate limit.
+    
+    Args:
+        request: FastAPI request object
+        max_requests: Maximum requests allowed in window
+        window: Time window in seconds
+    
+    Raises:
+        HTTPException: 429 if rate limit exceeded
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    # Remove entries outside the window
+    _rate_limit_store[client_ip] = [
+        t for t in _rate_limit_store[client_ip] if now - t < window
+    ]
+    
+    if len(_rate_limit_store[client_ip]) >= max_requests:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Rate limit exceeded: {max_requests} requests per {window} seconds",
+        )
+    
+    _rate_limit_store[client_ip].append(now)
 
 
 async def _verify_module_access(
@@ -78,9 +117,9 @@ async def list_logs(
     if module_id:
         await _verify_module_access(module_id, user_id, db_session)
     
-    # Read from file-based logs
+    # Read from file-based logs (async)
     from app.core.file_logger import APP_LOG_FILE
-    result = read_logs(
+    result = await read_logs_async(
         log_file=APP_LOG_FILE,
         severity=severity,
         source=source,
@@ -120,7 +159,7 @@ async def create_log(
     if module_id:
         await _verify_module_access(module_id, user_id, db_session)
     
-    log_entry = write_log(
+    log_entry = await write_log_async(
         severity=severity,
         message=message,
         source=source,
@@ -143,7 +182,7 @@ async def get_severity_counts(
     
     Now reads from file-based logs.
     """
-    return get_file_severity_counts(days=days)
+    return await get_severity_counts_async(days=days)
 
 
 @router.post(
@@ -154,11 +193,13 @@ async def get_severity_counts(
     description="Log a user interaction event from the frontend UI. Now writes to file for performance.",
 )
 async def log_interaction(
+    request: Request,
     log: InteractionLogCreate,
 ):
     """Log a frontend interaction event.
     
-    Now writes to file-based logs for 10-50x performance improvement.
+    Rate limited: 100 requests per minute per IP.
+    Writes to file-based logs for 10-50x performance improvement.
     No database dependency - works even if postgres is down.
     
     Severity Assignment:
@@ -166,8 +207,20 @@ async def log_interaction(
     - WARN: Slow interaction (duration > 5000ms)
     - INFO: Normal interaction (< 5000ms, success=true)
     """
-    # Write directly to file - no DB session needed
-    write_interaction_log(
+    # Rate limiting
+    await _check_rate_limit(request, max_requests=100, window=60)
+    
+    # Validate payload size (prevent disk fill attacks)
+    import sys
+    payload_size = sys.getsizeof(log.json())
+    if payload_size > 100000:  # 100KB max
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Interaction log payload too large (max 100KB)",
+        )
+    
+    # Write asynchronously to file - no DB session needed
+    await write_interaction_log_async(
         interaction_id=log.interactionId,
         session_id=log.sessionId,
         user_id=log.userId,
@@ -214,9 +267,9 @@ async def get_module_logs(
     """
     await _verify_module_access(module_id, user_id, db_session)
     
-    # Read from file-based logs instead of handler
+    # Read from file-based logs (async)
     from app.core.file_logger import APP_LOG_FILE
-    result = read_logs(
+    result = await read_logs_async(
         log_file=APP_LOG_FILE,
         severity=severity,
         source=source,
@@ -231,3 +284,13 @@ async def get_module_logs(
         "total": result["total"],
         "size": size,
     }
+
+
+@router.get("/health")
+async def log_health_check():
+    """Check logging system health.
+    
+    Returns disk space, write status, and configuration info.
+    """
+    health = await check_log_health_async()
+    return health

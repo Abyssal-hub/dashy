@@ -16,7 +16,6 @@ from app.services.auth.service import create_user, create_access_token
 from app.models.portfolio import Asset
 from app.models.calendar import CalendarEvent
 from app.models.module import Module
-from app.models.log import SystemLog
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
